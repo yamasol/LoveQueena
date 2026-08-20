@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<title>你是「單純欣賞」還是「用力過猛」？自我檢測</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+
+  :root{
+    --bg1: #eee3f7;
+    --bg2: #ffe4ec;
+    --ink: #2d2a4a;
+    --ink-soft: #6b6690;
+    --card: #ffffff;
+    --coral: #ff6b7a;
+    --coral-dark: #e6485a;
+    --teal: #3fbfb2;
+    --amber: #ffb84d;
+    --lav: #9b8cf2;
+    --line: #ece7fb;
+    --green: #3fbf72;
+    --yellow: #ffb020;
+    --orange: #ff8a3d;
+    --red: #ef4d5e;
+  }
+
+  *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+
+  html,body{
+    margin:0; padding:0;
+    min-height:100vh;
+    font-family:'Noto Sans TC', sans-serif;
+    color: var(--ink);
+    overflow-x:hidden;
+  }
+
+  body{
+    background: linear-gradient(160deg, var(--bg1), var(--bg2));
+    display:flex;
+    justify-content:center;
+    align-items:flex-start;
+    padding: 28px 14px 60px;
+    position:relative;
+  }
+
+  /* 背景漂浮裝飾 */
+  .blob{
+    position:fixed;
+    border-radius:50%;
+    filter: blur(2px);
+    opacity:0.5;
+    z-index:0;
+    pointer-events:none;
+    animation: float 14s ease-in-out infinite;
+  }
+  .blob.b1{ width:160px; height:160px; background: var(--lav); top:-40px; left:-40px; animation-duration: 16s; }
+  .blob.b2{ width:120px; height:120px; background: var(--coral); top:60%; right:-30px; animation-duration: 12s; animation-delay: -3s; }
+  .blob.b3{ width:90px; height:90px; background: var(--teal); bottom:5%; left:5%; animation-duration: 18s; animation-delay: -6s; }
+  .blob.b4{ width:70px; height:70px; background: var(--amber); top:20%; right:12%; animation-duration: 10s; animation-delay: -2s; }
+  @keyframes float{
+    0%,100%{ transform: translate(0,0) scale(1); }
+    33%{ transform: translate(14px,-18px) scale(1.06); }
+    66%{ transform: translate(-12px,10px) scale(0.96); }
+  }
+  .sparkle{
+    position:fixed;
+    font-size: 18px;
+    opacity:0.35;
+    z-index:0;
+    animation: drift 9s linear infinite;
+    pointer-events:none;
+  }
+  @keyframes drift{
+    0%{ transform: translateY(0) rotate(0deg); opacity:0.15; }
+    50%{ opacity:0.4; }
+    100%{ transform: translateY(-40px) rotate(20deg); opacity:0.1; }
+  }
+
+  .wrap{
+    position:relative;
+    z-index:1;
+    width:100%;
+    max-width: 460px;
+  }
+
+  .card{
+    background: var(--card);
+    border-radius: 26px;
+    box-shadow: 0 18px 40px rgba(90,70,150,0.18);
+    padding: 30px 26px 28px;
+    position:relative;
+    overflow:hidden;
+    animation: pop-in 0.35s ease;
+  }
+  @keyframes pop-in{
+    from{ opacity:0; transform: translateY(14px) scale(0.98); }
+    to{ opacity:1; transform: translateY(0) scale(1); }
+  }
+
+  /* ---------- Intro ---------- */
+  .eyebrow{
+    font-family:'Baloo 2', sans-serif;
+    font-weight:700;
+    font-size: 13px;
+    color: var(--coral-dark);
+    background: #fff0f2;
+    display:inline-block;
+    padding: 4px 12px;
+    border-radius: 999px;
+    margin-bottom: 14px;
+    letter-spacing: 1px;
+  }
+  h1.title{
+    font-family:'Baloo 2', sans-serif;
+    font-weight: 800;
+    font-size: 26px;
+    line-height:1.35;
+    margin: 0 0 14px;
+    color: var(--ink);
+  }
+  .intro-desc{
+    font-size: 14.5px;
+    line-height:1.9;
+    color: var(--ink-soft);
+    margin-bottom: 18px;
+  }
+  .intro-desc b{ color: var(--ink); }
+  .meta-pills{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-bottom: 22px;
+  }
+  .meta-pills span{
+    font-size: 12px;
+    background: var(--line);
+    color: var(--lav);
+    font-weight:700;
+    padding: 5px 12px;
+    border-radius: 999px;
+  }
+  .disclaimer{
+    font-size: 12px;
+    color: var(--ink-soft);
+    background: #f8f6ff;
+    border-radius: 12px;
+    padding: 12px 14px;
+    line-height:1.7;
+    margin-bottom: 22px;
+  }
+
+  .btn{
+    width:100%;
+    border:none;
+    cursor:pointer;
+    font-family:'Baloo 2', sans-serif;
+    font-weight:700;
+    font-size: 17px;
+    color:#fff;
+    background: linear-gradient(135deg, var(--coral), var(--coral-dark));
+    padding: 15px;
+    border-radius: 16px;
+    box-shadow: 0 10px 22px rgba(230,72,90,0.35);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .btn:active{ transform: scale(0.97); box-shadow: 0 6px 14px rgba(230,72,90,0.3); }
+  .btn.ghost{
+    background: #fff;
+    color: var(--coral-dark);
+    border: 2px solid var(--coral);
+    box-shadow:none;
+    margin-top: 12px;
+  }
+
+  /* ---------- Quiz ---------- */
+  .progress-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom: 22px;
+  }
+  .progress-track{
+    flex:1;
+    height: 8px;
+    background: var(--line);
+    border-radius: 999px;
+    overflow:hidden;
+  }
+  .progress-fill{
+    height:100%;
+    background: linear-gradient(90deg, var(--lav), var(--coral));
+    border-radius: 999px;
+    transition: width 0.35s ease;
+  }
+  .progress-label{
+    font-family:'Baloo 2', sans-serif;
+    font-size: 13px;
+    font-weight:700;
+    color: var(--ink-soft);
+    white-space:nowrap;
+  }
+
+  .q-tag{
+    display:inline-block;
+    font-size: 11.5px;
+    font-weight:700;
+    color: var(--teal);
+    background: #e8fbf8;
+    padding: 3px 10px;
+    border-radius: 999px;
+    margin-bottom: 12px;
+  }
+  .q-text{
+    font-size: 16.5px;
+    line-height: 1.75;
+    font-weight: 500;
+    margin-bottom: 20px;
+    color: var(--ink);
+  }
+
+  .options{
+    display:flex;
+    flex-direction:column;
+    gap: 10px;
+  }
+  .opt{
+    text-align:left;
+    border: 2px solid var(--line);
+    background: #fdfcff;
+    border-radius: 16px;
+    padding: 13px 16px;
+    font-size: 14px;
+    line-height:1.6;
+    color: var(--ink);
+    cursor:pointer;
+    display:flex;
+    gap: 10px;
+    align-items:flex-start;
+    transition: all 0.15s ease;
+  }
+  .opt:hover{ border-color: var(--lav); background: #f7f4ff; }
+  .opt:active{ transform: scale(0.985); }
+  .opt .badge{
+    flex-shrink:0;
+    width: 24px; height:24px;
+    border-radius:50%;
+    background: var(--line);
+    color: var(--ink-soft);
+    font-weight:700;
+    font-size:12.5px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:'Baloo 2', sans-serif;
+  }
+  .opt.selected{
+    border-color: var(--coral);
+    background: #fff0f2;
+  }
+  .opt.selected .badge{
+    background: var(--coral);
+    color:#fff;
+  }
+
+  .nav-row{
+    display:flex;
+    gap:10px;
+    margin-top: 22px;
+  }
+  .nav-row .btn.secondary{
+    background:#fff;
+    color: var(--ink-soft);
+    border: 2px solid var(--line);
+    box-shadow:none;
+  }
+
+  /* ---------- Results ---------- */
+  .tier-badge{
+    display:flex;
+    align-items:center;
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+  .tier-emoji{
+    font-size: 42px;
+    line-height:1;
+  }
+  .tier-name{
+    font-family:'Baloo 2', sans-serif;
+    font-weight:800;
+    font-size: 21px;
+  }
+  .tier-sub{
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    margin-top:2px;
+  }
+
+  .gauge-wrap{
+    display:flex;
+    justify-content:center;
+    margin: 6px 0 20px;
+  }
+
+  .cat-block{
+    margin-bottom: 14px;
+    padding: 14px 16px;
+    background: #f9f8fd;
+    border-radius: 14px;
+  }
+  .cat-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom: 8px;
+  }
+  .cat-name{
+    font-weight:700;
+    font-size: 13.5px;
+  }
+  .cat-score{
+    font-family:'Baloo 2', sans-serif;
+    font-weight:700;
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+  .cat-bar-track{
+    height: 8px;
+    background: var(--line);
+    border-radius: 999px;
+    overflow:hidden;
+    margin-bottom:10px;
+  }
+  .cat-bar-fill{ height:100%; border-radius:999px; }
+  .cat-desc{
+    font-size: 13px;
+    line-height:1.75;
+    color: var(--ink-soft);
+  }
+
+  .section-title{
+    font-family:'Baloo 2', sans-serif;
+    font-weight:700;
+    font-size: 16px;
+    margin: 22px 0 10px;
+    color: var(--ink);
+  }
+
+  .advice-box{
+    background: linear-gradient(135deg, #fff7ef, #fff);
+    border: 1.5px solid #ffe1c2;
+    border-radius: 16px;
+    padding: 16px 18px;
+    margin-bottom: 10px;
+  }
+  .advice-box.warn{
+    background: linear-gradient(135deg, #fff0f1, #fff);
+    border-color: #ffc9cf;
+  }
+  .advice-box p{
+    font-size: 13.5px;
+    line-height: 1.85;
+    margin: 0 0 8px;
+    color: var(--ink);
+  }
+  .advice-box ol{
+    margin: 6px 0 0;
+    padding-left: 20px;
+  }
+  .advice-box li{
+    font-size: 13.5px;
+    line-height: 1.85;
+    margin-bottom: 6px;
+    color: var(--ink);
+  }
+  .advice-box li b{ color: var(--coral-dark); }
+
+  .resource-note{
+    font-size: 12px;
+    color: var(--ink-soft);
+    background: #f3f1ff;
+    border-radius: 12px;
+    padding: 12px 14px;
+    line-height:1.8;
+    margin-top: 14px;
+  }
+
+  .footer-disclaimer{
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    text-align:center;
+    margin-top: 18px;
+    line-height:1.7;
+    opacity:0.8;
+  }
+
+  @media (max-width: 380px){
+    .card{ padding: 24px 18px 22px; }
+    h1.title{ font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="blob b1"></div>
+<div class="blob b2"></div>
+<div class="blob b3"></div>
+<div class="blob b4"></div>
+
+<div class="wrap">
+  <div class="card" id="app"></div>
+</div>
+
+<script>
+// ---------------- 資料 ----------------
+const QUESTIONS = [
+  {
+    cat: "info",
+    tag: "資訊蒐集",
+    text: "情境：偶像發了一張自拍，背景沒有明顯地標，但你卻能一眼認出那是哪條巷子、哪間店。你會？",
+    options: [
+      { t: "單純覺得「我也太懂細節了吧」，跟朋友分享一下這個發現", p: 1 },
+      { t: "特地搜尋一下那是哪裡，滿足好奇心就結束了", p: 2 },
+      { t: "默默記下這個地點，想著「下次經過可以順路看看」", p: 3 },
+      { t: "已經研究出她大概的活動範圍，慢慢拼湊出她的生活圈", p: 4 }
+    ]
+  },
+  {
+    cat: "info",
+    tag: "資訊蒐集",
+    text: "情境：她發文的時間很不規律，有時凌晨三點，有時中午。你發現自己：",
+    options: [
+      { t: "完全沒特別注意這件事", p: 1 },
+      { t: "偶爾會順口猜一下「她現在應該在幹嘛」", p: 2 },
+      { t: "常常在心裡推算她的作息，甚至比自己的作息還熟", p: 3 },
+      { t: "已經抓出她身體狀況／生理期之類的規律，當作「更了解她」的方式", p: 4 }
+    ]
+  },
+  {
+    cat: "worth",
+    tag: "自我價值",
+    text: "情境：你完成了一件很有成就感的事（作品、目標、突破），第一時間你最想的是：",
+    options: [
+      { t: "自己開心就好，沒特別想給誰看", p: 1 },
+      { t: "發到自己的社群，順其自然讓大家看到", p: 2 },
+      { t: "特別在意「如果她看到，會不會覺得我很厲害」", p: 3 },
+      { t: "如果沒被她看到／稱讚，這件事好像就少了意義", p: 4 }
+    ]
+  },
+  {
+    cat: "worth",
+    tag: "自我價值",
+    text: "情境：朋友群組在聊完全不相干的話題（買車、路線、時事），你發現自己：",
+    options: [
+      { t: "就聊當下話題，沒什麼特別聯想", p: 1 },
+      { t: "偶爾會想到「這個她應該也喜歡／也懂」", p: 2 },
+      { t: "常常忍不住把話題繞回她身上", p: 3 },
+      { t: "朋友已經明講「你很常提到她」，但你自己覺得沒什麼", p: 4 }
+    ]
+  },
+  {
+    cat: "emo",
+    tag: "情緒強度",
+    text: "情境：她公開回應「自己單身、沒有對象」，你的反應會是：",
+    options: [
+      { t: "單純當八卦看過去而已", p: 1 },
+      { t: "有點開心，但也知道這跟自己沒什麼關係", p: 2 },
+      { t: "認真感到鬆一口氣，覺得「機會還在」", p: 3 },
+      { t: "開始認真想像如果自己能陪在她身邊會是什麼樣子", p: 4 }
+    ]
+  },
+  {
+    cat: "emo",
+    tag: "情緒強度",
+    text: "情境：某天她沒有像平常一樣回應／互動（已讀不回、活動上沒特別理你），你會：",
+    options: [
+      { t: "沒什麼感覺，可能她就是在忙", p: 1 },
+      { t: "有點小失落，但很快就過去了", p: 2 },
+      { t: "情緒明顯受影響，會反覆想「是不是我做錯了什麼」", p: 3 },
+      { t: "感到強烈不安，忍不住想做點什麼讓她注意到自己", p: 4 }
+    ]
+  },
+  {
+    cat: "worth",
+    tag: "自我價值",
+    text: "情境：朋友半開玩笑說「你很像在把她當女神／暗戀她」，你通常會：",
+    options: [
+      { t: "笑笑承認，覺得沒什麼好隱瞞，還能自嘲兩句", p: 1 },
+      { t: "有點不好意思，但基本上認同朋友的觀察", p: 2 },
+      { t: "立刻否認，堅持自己只是「單純欣賞」", p: 3 },
+      { t: "感到被冒犯，覺得朋友不懂「這段特別的關係」", p: 4 }
+    ]
+  },
+  {
+    cat: "info",
+    tag: "資訊蒐集",
+    text: "情境：如果有機會取得她私下、沒有公開過的資訊（私人聯絡方式、行蹤細節、家人朋友身分），你會：",
+    options: [
+      { t: "完全不會想知道，覺得那是別人的隱私", p: 1 },
+      { t: "會好奇，但知道不該查，也不會真的去做", p: 2 },
+      { t: "忍不住會想辦法拼湊，即使知道有點越界", p: 3 },
+      { t: "已經這樣做了，而且覺得這是「更靠近她」的方式", p: 4 }
+    ]
+  }
+];
+
+const CAT_META = {
+  worth: { name: "自我價值依附", color: "var(--lav)", max: 12 },
+  info:  { name: "資訊蒐集與隱私界線", color: "var(--teal)", max: 12 },
+  emo:   { name: "情緒反應強度", color: "var(--coral)", max: 8 }
+};
+
+// ---------------- 狀態 ----------------
+let state = { screen: "intro", current: 0, answers: new Array(QUESTIONS.length).fill(null) };
+
+const app = document.getElementById("app");
+
+function render(){
+  if(state.screen === "intro") renderIntro();
+  else if(state.screen === "quiz") renderQuiz();
+  else renderResult();
+}
+
+function renderIntro(){
+  app.innerHTML = `
+    <span class="eyebrow">✨ 自我覺察小測驗</span>
+    <h1 class="title">你是「單純欣賞」<br>還是「用力過猛」？</h1>
+    <div class="intro-desc">
+      喜歡一個公眾人物、把對方當偶像甚至精神寄託，其實很常見。<br><br>
+      但有時候這份喜歡，會不知不覺從「欣賞」滑向<b>「過度依附」</b>，甚至跨過<b>「隱私界線」</b>而不自知。<br><br>
+      這 8 題情境題，幫你誠實檢視自己（或想了解的朋友）目前落在哪個階段——<b>結果會直接講重點，不會為了好聽而模糊帶過</b>。
+    </div>
+    <div class="meta-pills">
+      <span>⏱ 約 2 分鐘</span>
+      <span>📝 8 題情境</span>
+      <span>🔍 附完整分析</span>
+    </div>
+    <div class="disclaimer">
+      這是一份自我覺察工具，<b>不是醫學或心理診斷</b>。結果僅供參考，如果測完覺得在意，建議找信任的人聊聊，或諮詢專業心理師。
+    </div>
+    <button class="btn" onclick="startQuiz()">開始測驗 →</button>
+  `;
+}
+
+function startQuiz(){
+  state.screen = "quiz";
+  state.current = 0;
+  state.answers = new Array(QUESTIONS.length).fill(null);
+  render();
+}
+
+function renderQuiz(){
+  const idx = state.current;
+  const q = QUESTIONS[idx];
+  const selected = state.answers[idx];
+  const pct = Math.round(((idx) / QUESTIONS.length) * 100);
+
+  app.innerHTML = `
+    <div class="progress-row">
+      <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+      <div class="progress-label">${idx+1} / ${QUESTIONS.length}</div>
+    </div>
+    <span class="q-tag">${q.tag}</span>
+    <div class="q-text">${q.text}</div>
+    <div class="options">
+      ${q.options.map((o,i)=>`
+        <div class="opt ${selected===i?'selected':''}" onclick="selectOpt(${idx},${i})">
+          <span class="badge">${['A','B','C','D'][i]}</span>
+          <span>${o.t}</span>
+        </div>
+      `).join('')}
+    </div>
+    <div class="nav-row">
+      ${idx>0 ? `<button class="btn secondary" style="flex:1" onclick="prevQ()">← 上一題</button>` : ''}
+      <button class="btn" style="flex:2" ${selected===null?'disabled style="opacity:0.4;flex:2"':''} onclick="nextQ()">
+        ${idx === QUESTIONS.length-1 ? '看結果 →' : '下一題 →'}
+      </button>
+    </div>
+  `;
+}
+
+function selectOpt(qIdx, optIdx){
+  state.answers[qIdx] = optIdx;
+  render();
+}
+
+function prevQ(){
+  state.current -= 1;
+  render();
+}
+
+function nextQ(){
+  if(state.answers[state.current] === null) return;
+  if(state.current === QUESTIONS.length - 1){
+    state.screen = "result";
+  } else {
+    state.current += 1;
+  }
+  render();
+}
+
+function computeScores(){
+  let total = 0;
+  let cat = { worth:0, info:0, emo:0 };
+  QUESTIONS.forEach((q, i)=>{
+    const ansIdx = state.answers[i];
+    const pts = q.options[ansIdx].p;
+    total += pts;
+    cat[q.cat] += pts;
+  });
+  return { total, cat };
+}
+
+function getTier(total){
+  if(total <= 13) return { key:"green", emoji:"🟢", name:"綠燈・健康欣賞區", sub:"你的喜歡有邊界、有分寸", color:"var(--green)" };
+  if(total <= 19) return { key:"yellow", emoji:"🟡", name:"黃燈・需要留意", sub:"開始出現輕度依附傾向", color:"var(--yellow)" };
+  if(total <= 26) return { key:"orange", emoji:"🟠", name:"橙燈・明顯警訊", sub:"部分行為已經跨過界線", color:"var(--orange)" };
+  return { key:"red", emoji:"🔴", name:"紅燈・高風險", sub:"建議正視並尋求協助", color:"var(--red)" };
+}
+
+function catLevel(score, max){
+  const pct = score / max;
+  if(pct <= 0.4) return "low";
+  if(pct <= 0.7) return "mid";
+  return "high";
+}
+
+const CAT_TEXT = {
+  worth: {
+    low:  "你不太需要靠對方的肯定來確認自己的價值，做事的動機主要來自於自己。這是很穩定、健康的心理狀態。",
+    mid:  "你有時候會希望對方看見、肯定自己，這是人之常情，但留意別讓「她會不會注意到」變成你做事的主要動機。",
+    high: "你的自我價值感有不小一部分建立在「對方有沒有看到／肯定我」上。這代表你可能把評價自己的裁判權，交給了一個不一定會回應你的人，長期下來容易讓自己很累、很沒安全感。"
+  },
+  info: {
+    low:  "你對他人隱私有清楚的界線意識，不會想蒐集對方沒有公開的資訊，這是很重要、也值得保持的底線。",
+    mid:  "你會對細節感到好奇，甚至偶爾想拼湊資訊，但目前還停留在「想」而不是「做」。這是一個需要提高警覺的階段——好奇心如果沒有被自己踩剎車，很容易慢慢升級。",
+    high: "你已經出現主動蒐集對方非公開資訊的行為（行蹤、生活規律等）。這已經不只是「粉絲心態」，而是進入了侵犯隱私、甚至可能構成跟蹤騷擾的範疇，需要立刻正視。"
+  },
+  emo: {
+    low:  "面對對方的冷落或忽略，你的情緒起伏不大，代表你的情緒穩定度沒有過度依賴這段單向關係。",
+    mid:  "對方的回應與否，會明顯牽動你的情緒，這代表這段關係在你心裡的份量，可能已經超過它實際存在的樣子。",
+    high: "你的情緒會因為對方的一個回應或忽略而劇烈起伏，甚至會有「想做點什麼讓對方注意到自己」的衝動。這種情緒依賴強度，是需要認真看待的警訊。"
+  }
+};
+
+const TIER_ADVICE = {
+  green: {
+    box: "advice-box",
+    html: `
+      <p>你目前對這個人的喜歡，基本上落在健康、有邊界的「娛樂社交型」投入，恭喜你！</p>
+      <p><b>我可以怎麼做：</b></p>
+      <ol>
+        <li>保持現在這種「欣賞但不依賴」的距離感，這其實是最舒服、最不容易受傷的狀態。</li>
+        <li>如果想更進一步表達喜歡，試著把這份熱情轉化成自己的成長（例如學習對方擅長的技能、認識同好），而不是只單向關注對方的生活。</li>
+      </ol>
+    `
+  },
+  yellow: {
+    box: "advice-box",
+    html: `
+      <p>你已經開始把一部分自我價值或情緒寄託在對方身上。這個階段其實很常見，不用過度緊張，但值得認真留意，避免繼續往上升級。</p>
+      <p><b>我可以怎麼做：</b></p>
+      <ol>
+        <li>做完一件事，先問自己「我自己開不開心」，再想別人會不會看到——把判斷價值的主導權拿回自己手上。</li>
+        <li>留意自己是不是常常因為對方一個小小的回應或忽略就情緒起伏很大，如果有，試著記錄下來，觀察頻率有沒有在增加。</li>
+        <li>刻意花時間投入其他關係與興趣，確保生活重心不是只剩這一件事。</li>
+      </ol>
+    `
+  },
+  orange: {
+    box: "advice-box warn",
+    html: `
+      <p>你目前已經出現幾個需要正視的警訊，包括可能已經跨過「欣賞」跟「打探隱私」之間的界線。這不是靠「再喜歡久一點就會沒事」可以自然解決的。</p>
+      <p><b>我可以怎麼做：</b></p>
+      <ol>
+        <li>誠實問自己：如果換成有人在打聽「我」的行蹤、生活細節，我會不會覺得毛骨悚然？將心比心是最直接的檢查點。</li>
+        <li>立刻停止任何蒐集對方非公開資訊的行為——這不只是道德界線，持續進行可能也有法律風險。</li>
+        <li>找一位你信任、會講真話的朋友或家人聊聊這件事，而不是只在會附和你的圈子裡討論。</li>
+        <li>如果發現自己很難控制這些念頭或行為，建議找心理諮商聊聊，這不是丟臉的事，及早處理會讓自己輕鬆很多。</li>
+      </ol>
+    `
+  },
+  red: {
+    box: "advice-box warn",
+    html: `
+      <p>從作答來看，這已經不只是「追星追過頭」的程度，而是出現了實際蒐集隱私資訊、甚至有行動衝動的跡象。這需要被認真、誠實地面對，越早處理越好。</p>
+      <p><b>我可以怎麼做：</b></p>
+      <ol>
+        <li><b>現在就停止</b>任何進一步蒐集或利用對方隱私資訊的行為。</li>
+        <li>這個階段通常不是靠自己「想通」就能解決的，強烈建議尋求專業心理諮商協助，及早介入效果會好很多。</li>
+        <li>了解一下法律風險：在台灣，反覆監視、跟蹤特定對象的行為可能構成《跟蹤騷擾防制法》規範的違法行為，不只是「愛得比較深」這麼簡單。</li>
+        <li>如果你發現自己有想更進一步接近對方（例如前往對方住處）的衝動，請立刻找人陪伴、談話，不要自己一個人硬撐。</li>
+      </ol>
+    `
+  }
+};
+
+function renderResult(){
+  const { total, cat } = computeScores();
+  const tier = getTier(total);
+  const maxTotal = 32;
+  const pctTotal = Math.round((total / maxTotal) * 100);
+
+  const catRows = Object.keys(CAT_META).map(key=>{
+    const meta = CAT_META[key];
+    const score = cat[key];
+    const level = catLevel(score, meta.max);
+    const pct = Math.round((score/meta.max)*100);
+    return `
+      <div class="cat-block">
+        <div class="cat-head">
+          <span class="cat-name">${meta.name}</span>
+          <span class="cat-score">${score} / ${meta.max}</span>
+        </div>
+        <div class="cat-bar-track"><div class="cat-bar-fill" style="width:${pct}%; background:${meta.color}"></div></div>
+        <div class="cat-desc">${CAT_TEXT[key][level]}</div>
+      </div>
+    `;
+  }).join('');
+
+  const advice = TIER_ADVICE[tier.key];
+
+  app.innerHTML = `
+    <div class="tier-badge">
+      <div class="tier-emoji">${tier.emoji}</div>
+      <div>
+        <div class="tier-name" style="color:${tier.color}">${tier.name}</div>
+        <div class="tier-sub">${tier.sub}</div>
+      </div>
+    </div>
+
+    <div class="gauge-wrap">
+      ${gaugeSVG(pctTotal, tier.color, total, maxTotal)}
+    </div>
+
+    <div class="section-title">📊 三大面向分析</div>
+    ${catRows}
+
+    <div class="section-title">💡 給你的完整建議</div>
+    <div class="${advice.box}">${advice.html}</div>
+
+    <div class="resource-note">
+      💬 如果測完覺得自己或身邊的人壓力很大、需要找人聊聊，可以考慮撥打衛福部<b>1925（依舊愛我）安心專線</b>（24 小時），或預約心理諮商，都是很正常、值得鼓勵的一步。
+    </div>
+
+    <button class="btn" style="margin-top:20px" onclick="restart()">🔄 清除紀錄，重新測驗</button>
+
+    <div class="footer-disclaimer">本測驗為自我覺察參考工具，不具備醫學診斷效力。</div>
+  `;
+}
+
+function gaugeSVG(pct, color, total, max){
+  const r = 54, c = 2*Math.PI*r;
+  const offset = c - (pct/100)*c;
+  return `
+    <svg width="150" height="150" viewBox="0 0 140 140">
+      <circle cx="70" cy="70" r="${r}" fill="none" stroke="var(--line)" stroke-width="14"/>
+      <circle cx="70" cy="70" r="${r}" fill="none" stroke="${color}" stroke-width="14"
+        stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${offset}"
+        transform="rotate(-90 70 70)" style="transition: stroke-dashoffset 0.6s ease"/>
+      <text x="70" y="66" text-anchor="middle" font-family="Baloo 2, sans-serif" font-weight="800" font-size="26" fill="var(--ink)">${total}</text>
+      <text x="70" y="86" text-anchor="middle" font-family="Noto Sans TC, sans-serif" font-size="11" fill="var(--ink-soft)">/ ${max} 分</text>
+    </svg>
+  `;
+}
+
+function restart(){
+  state = { screen: "intro", current: 0, answers: new Array(QUESTIONS.length).fill(null) };
+  render();
+}
+
+// 背景漂浮小星星
+(function addSparkles(){
+  const emojis = ["✨","💫","⭐"];
+  for(let i=0;i<6;i++){
+    const s = document.createElement('div');
+    s.className = 'sparkle';
+    s.textContent = emojis[i % emojis.length];
+    s.style.left = (Math.random()*90+5) + 'vw';
+    s.style.top = (Math.random()*80+5) + 'vh';
+    s.style.animationDelay = (Math.random()*6) + 's';
+    s.style.animationDuration = (7 + Math.random()*6) + 's';
+    document.body.appendChild(s);
+  }
+})();
+
+render();
+</script>
+</body>
+</html>
