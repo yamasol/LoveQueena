@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>時間軸重建工具</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  :root{
+    --bg:#0E141C;
+    --panel:#151D28;
+    --panel-2:#1B2531;
+    --grid:rgba(255,255,255,0.035);
+    --border:#29323F;
+    --ink:#E8ECF1;
+    --ink-dim:#8C9AAC;
+    --ink-faint:#5B6878;
+    --amber:#E0A458;
+    --amber-ink:#231708;
+    --blue:#55A8E0;
+    --blue-ink:#071723;
+    --danger:#E2694F;
+    --font-display:'Space Grotesk', 'Noto Sans TC', sans-serif;
+    --font-body:'Inter', 'Noto Sans TC', sans-serif;
+    --font-mono:'JetBrains Mono', 'Cascadia Code', monospace;
+  }
+
+  *{ box-sizing:border-box; }
+
+  html,body{
+    margin:0;
+    background-color:var(--bg);
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size:28px 28px;
+    color:var(--ink);
+    font-family:var(--font-body);
+    -webkit-font-smoothing:antialiased;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:0.001ms !important; transition-duration:0.001ms !important; }
+  }
+
+  a,button,input,select,textarea{ font-family:inherit; color:inherit; }
+  button{ cursor:pointer; }
+  :focus-visible{ outline:2px solid var(--amber); outline-offset:2px; }
+
+  .app{ max-width:980px; margin:0 auto; padding:28px 20px 60px; }
+
+  /* ---------- topbar ---------- */
+  .topbar{
+    display:flex; align-items:flex-start; justify-content:space-between;
+    gap:16px; flex-wrap:wrap; margin-bottom:6px;
+  }
+  .brand{ display:flex; align-items:center; gap:14px; }
+  .brand-mark{
+    font-size:28px; color:var(--amber); line-height:1;
+    filter:drop-shadow(0 0 8px rgba(224,164,88,0.35));
+  }
+  .brand h1{
+    font-family:var(--font-display); font-size:22px; font-weight:700;
+    margin:0; letter-spacing:0.2px;
+  }
+  .brand .tagline{ margin:2px 0 0; font-size:13px; color:var(--ink-dim); }
+
+  .topbar-actions{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .tz-field{
+    display:flex; align-items:center; gap:6px; font-size:12px; color:var(--ink-dim);
+    background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:6px 10px;
+  }
+  .tz-field input{
+    width:64px; background:transparent; border:none; color:var(--ink);
+    font-family:var(--font-mono); font-size:13px;
+  }
+  .tz-field input:focus{ outline:none; }
+
+  .autosave-status{
+    margin:6px 0 22px; font-size:11.5px; color:var(--ink-faint); min-height:14px;
+    font-family:var(--font-mono);
+  }
+
+  /* ---------- buttons ---------- */
+  .primary-btn, .ghost-btn, .icon-btn{
+    border-radius:6px; font-size:13.5px; font-weight:600; border:1px solid transparent;
+    padding:9px 16px; transition:transform .12s ease, filter .12s ease, background .12s ease;
+  }
+  .primary-btn{ background:var(--amber); color:var(--amber-ink); }
+  .primary-btn:hover{ filter:brightness(1.08); }
+  .primary-btn:active{ transform:translateY(1px); }
+  .primary-btn:disabled{ opacity:0.6; cursor:default; }
+  .ghost-btn{ background:transparent; border-color:var(--border); color:var(--ink); }
+  .ghost-btn:hover{ border-color:var(--ink-dim); }
+  .ghost-btn.danger{ color:var(--danger); border-color:var(--border); }
+  .ghost-btn.danger:hover{ border-color:var(--danger); }
+  .icon-btn{
+    background:transparent; border:1px solid var(--border); padding:5px 8px; font-size:13px;
+    line-height:1; border-radius:5px;
+  }
+  .icon-btn:hover{ border-color:var(--ink-dim); }
+  .icon-btn.del-btn:hover{ border-color:var(--danger); color:var(--danger); }
+
+  /* ---------- panels ---------- */
+  .panel{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    padding:20px; margin-bottom:18px;
+  }
+  .panel-title{
+    font-family:var(--font-display); font-size:15px; font-weight:600; margin:0 0 14px;
+    letter-spacing:0.3px; text-transform:uppercase; color:var(--ink);
+  }
+  .panel-header{
+    display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:14px;
+    flex-wrap:wrap;
+  }
+  .panel-header .panel-title{ margin:0; }
+  .summary{ font-size:12.5px; color:var(--ink-dim); font-family:var(--font-mono); }
+
+  /* ---------- tabs ---------- */
+  .tabs{ display:flex; gap:8px; margin-bottom:16px; }
+  .tab{
+    flex:1; background:var(--panel-2); border:1px solid var(--border); color:var(--ink-dim);
+    padding:9px 10px; border-radius:6px; font-size:13.5px; font-weight:600;
+  }
+  .tab.active{ color:var(--bg); background:var(--ink); border-color:var(--ink); }
+  .tab[data-kind="stay"].active{ background:var(--amber); border-color:var(--amber); color:var(--amber-ink); }
+  .tab[data-kind="trip"].active{ background:var(--blue); border-color:var(--blue); color:var(--blue-ink); }
+
+  /* ---------- add-entry layout ---------- */
+  .add-grid{ display:grid; grid-template-columns:1.3fr 1fr; gap:20px; align-items:start; }
+  @media (max-width:800px){ .add-grid{ grid-template-columns:1fr; } }
+
+  .point-toggle{ display:flex; gap:8px; margin-bottom:10px; }
+  .point-btn{
+    flex:1; background:var(--panel-2); border:1px solid var(--border); color:var(--ink-dim);
+    padding:8px 10px; border-radius:6px; font-size:13px; font-weight:600;
+  }
+  .point-btn[data-point="A"].active{ background:var(--amber); border-color:var(--amber); color:var(--amber-ink); }
+  .point-btn[data-point="B"].active{ background:var(--blue); border-color:var(--blue); color:var(--blue-ink); }
+
+  .search-row{ display:flex; gap:8px; margin-bottom:10px; }
+  .search-row input{ flex:1; }
+
+  #pickerMap{
+    width:100%; height:340px; border-radius:8px; border:1px solid var(--border);
+    background:var(--panel-2);
+  }
+  @media (max-width:800px){ #pickerMap{ height:280px; } }
+
+  .map-hint{ font-size:11.5px; color:var(--ink-faint); margin:8px 2px 0; }
+  .map-hint a{ color:var(--amber); }
+
+  #previewMap{
+    width:100%; height:380px; border-radius:8px; border:1px solid var(--border);
+    background:var(--panel-2); margin-top:2px;
+  }
+  @media (max-width:800px){ #previewMap{ height:300px; } }
+
+  .pin-dot{
+    width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-size:12px; font-weight:700; box-shadow:0 2px 6px rgba(0,0,0,0.45);
+    border:2px solid rgba(14,20,28,0.55);
+  }
+  .pin-a{ background:var(--amber); color:var(--amber-ink); }
+  .pin-b{ background:var(--blue); color:var(--blue-ink); }
+
+  /* ---------- fields ---------- */
+  .field{ display:flex; flex-direction:column; gap:5px; margin-bottom:12px; }
+  .field-label{ font-size:12.5px; color:var(--ink-dim); font-weight:500; }
+  input[type="text"], input[type="date"], select{
+    background:var(--panel-2); border:1px solid var(--border); border-radius:6px;
+    padding:9px 10px; font-size:13.5px; color:var(--ink); width:100%;
+    font-family:var(--font-mono);
+  }
+  select{ font-family:var(--font-body); }
+  input::placeholder{ color:var(--ink-faint); }
+  .coord-readout{ margin:-6px 0 12px; font-size:11.5px; color:var(--ink-faint); font-family:var(--font-mono); min-height:14px; }
+  .dist-readout{ font-size:13px; color:var(--ink); font-family:var(--font-mono); margin:0 0 14px; }
+
+  .form-actions{ display:flex; gap:10px; margin-top:4px; }
+  .form-actions .primary-btn{ flex:1; }
+
+  /* ---------- timeline log rail ---------- */
+  .empty-state{ color:var(--ink-faint); font-size:13px; padding:6px 0 2px; }
+  .timeline-list{
+    list-style:none; margin:0; padding:0 0 0 26px; position:relative;
+  }
+  .timeline-list::before{
+    content:''; position:absolute; left:9px; top:6px; bottom:6px; width:2px;
+    background:var(--border);
+  }
+  .log-row{
+    position:relative; display:flex; gap:14px; align-items:flex-start;
+    padding:12px 0; border-bottom:1px solid var(--border);
+  }
+  .log-row:last-child{ border-bottom:none; }
+  .log-row .marker{
+    position:absolute; left:-26px; top:16px; width:12px; height:12px; border-radius:50%;
+    background:var(--panel); border:2px solid var(--amber);
+  }
+  .log-row.trip .marker{
+    border-radius:3px; transform:rotate(45deg); border-color:var(--blue);
+  }
+  .row-main{ flex:1; min-width:0; }
+  .row-time{ font-family:var(--font-mono); font-size:13.5px; color:var(--ink); }
+  .row-detail{ margin-top:4px; font-size:12.5px; color:var(--ink-dim); display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .badge{
+    font-size:10.5px; font-weight:700; letter-spacing:0.4px; padding:2px 7px; border-radius:4px;
+    text-transform:uppercase; flex-shrink:0;
+  }
+  .badge-stay{ background:rgba(224,164,88,0.16); color:var(--amber); }
+  .badge-trip{ background:rgba(85,168,224,0.16); color:var(--blue); }
+  .row-actions{ display:flex; gap:6px; flex-shrink:0; }
+
+  /* ---------- export ---------- */
+  .export-actions{ display:flex; gap:8px; }
+  #jsonPreview{
+    width:100%; min-height:200px; resize:vertical; font-size:12.5px; line-height:1.55;
+    white-space:pre; overflow:auto; background:var(--panel-2); border:1px solid var(--border);
+    border-radius:6px; padding:10px; color:var(--ink); font-family:var(--font-mono);
+  }
+  .copy-flash{ color:var(--amber); }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">⟡</span>
+      <div>
+        <h1>時間軸重建工具</h1>
+        <p class="tagline">在地圖上點選 A、B 兩點，重建每天的移動紀錄</p>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <label class="tz-field">時區 <input type="text" id="tzOffset" value="+08:00" maxlength="6" aria-label="時區位移"></label>
+      <button type="button" id="importBtn" class="ghost-btn">匯入 JSON</button>
+      <button type="button" id="clearAllBtn" class="ghost-btn danger">清空全部</button>
+    </div>
+  </header>
+  <p class="autosave-status" id="autosaveStatus"></p>
+
+  <section class="panel form-panel">
+    <h2 class="panel-title">新增一天的紀錄</h2>
+    <div class="tabs" role="tablist">
+      <button type="button" class="tab active" data-kind="stay" role="tab" aria-selected="true">● 單一地點</button>
+      <button type="button" class="tab" data-kind="trip" role="tab" aria-selected="false">◆ A → B 移動</button>
+    </div>
+
+    <form id="entryForm" novalidate>
+      <div class="add-grid">
+        <div class="map-col">
+          <div class="point-toggle" id="pointToggle" hidden>
+            <button type="button" class="point-btn active" data-point="A">設定 A 點</button>
+            <button type="button" class="point-btn" data-point="B">設定 B 點</button>
+          </div>
+          <div class="search-row">
+            <input type="text" id="searchInput" placeholder="搜尋地點，例如：台北車站">
+            <button type="button" id="searchBtn" class="ghost-btn">搜尋</button>
+          </div>
+          <div id="pickerMap"></div>
+          <p class="map-hint">在地圖上點一下即可設定位置，標記可拖曳微調；也可以先用搜尋框跳到大概位置。</p>
+        </div>
+
+        <div class="fields-col">
+          <div class="field">
+            <span class="field-label">日期</span>
+            <input type="date" id="entryDate" required>
+          </div>
+
+          <div class="field">
+            <span class="field-label" id="aLabelCaption">地點名稱</span>
+            <input type="text" id="aLabel" placeholder="例如：住家">
+          </div>
+          <p class="coord-readout" id="aCoord"></p>
+
+          <div id="bBlock" hidden>
+            <div class="field">
+              <span class="field-label">B 點名稱</span>
+              <input type="text" id="bLabel" placeholder="例如：公司">
+            </div>
+            <p class="coord-readout" id="bCoord"></p>
+
+            <div class="field">
+              <span class="field-label">交通方式</span>
+              <select id="tripMode">
+                <option value="walking">走路</option>
+                <option value="cycling">腳踏車</option>
+                <option value="motorcycling">機車</option>
+                <option value="in passenger vehicle">開車</option>
+                <option value="in bus">大眾運輸</option>
+                <option value="unknown activity type">其他</option>
+              </select>
+            </div>
+            <p class="dist-readout" id="distReadout">距離：請先設定 A、B 兩點</p>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" id="submitBtn" class="primary-btn">＋ 新增這筆</button>
+            <button type="button" id="cancelEditBtn" class="ghost-btn" hidden>取消編輯</button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </section>
+
+  <section class="panel list-panel">
+    <div class="panel-header">
+      <h2 class="panel-title">時間軌跡</h2>
+      <span class="summary" id="summaryText">尚無資料</span>
+    </div>
+    <p class="empty-state" id="emptyState">還沒有任何紀錄，從上方新增第一筆吧。</p>
+    <ul class="timeline-list" id="timelineList"></ul>
+  </section>
+
+  <section class="panel preview-panel">
+    <div class="panel-header">
+      <h2 class="panel-title">軌跡預覽</h2>
+      <div class="export-actions">
+        <button type="button" id="playBtn" class="ghost-btn">▶ 播放軌跡動畫</button>
+        <button type="button" id="stopBtn" class="ghost-btn" hidden>■ 停止</button>
+      </div>
+    </div>
+    <p class="empty-state" id="previewEmpty">還沒有資料可以預覽，先在上方新增幾筆紀錄吧。</p>
+    <div id="previewMap"></div>
+    <p class="map-hint">想做成可以分享的旅程動畫影片？可以把下方輸出的 JSON 存檔後，拿去
+      <a href="https://ahn-lab.org/google-timeline-visualizer/" target="_blank" rel="noopener">Google Timeline Visualizer</a>
+      上傳，它會在你自己的裝置上產生 MP4，檔案不會被上傳到任何地方。</p>
+  </section>
+
+  <section class="panel export-panel">
+    <div class="panel-header">
+      <h2 class="panel-title">輸出 JSON</h2>
+      <div class="export-actions">
+        <button type="button" id="copyBtn" class="ghost-btn">複製</button>
+        <button type="button" id="downloadBtn" class="primary-btn">下載 .json</button>
+      </div>
+    </div>
+    <textarea id="jsonPreview" readonly spellcheck="false" style="display:none;"></textarea>
+    <pre id="jsonPreviewPre"></pre>
+  </section>
+
+</div>
+
+<input type="file" id="importFile" accept="application/json" hidden>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  let entries = [];
+  let currentKind = 'stay';
+  let editingId = null;
+  let activePoint = 'A';
+  let points = {};
+  let liveDistance = 0;
+
+  const $ = (id) => document.getElementById(id);
+
+  const modeLabels = {
+    'walking':'走路','cycling':'腳踏車','motorcycling':'機車',
+    'in passenger vehicle':'開車','in bus':'大眾運輸','unknown activity type':'其他'
+  };
+
+  /* ---------------- helpers ---------------- */
+
+  function uuid(){
+    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    return 'id-' + Date.now() + '-' + Math.random().toString(16).slice(2);
+  }
+
+  function escapeHtml(str){
+    const div = document.createElement('div');
+    div.textContent = str == null ? '' : str;
+    return div.innerHTML;
+  }
+
+  function fmtDateLabel(dateStr){
+    const d = new Date(dateStr + 'T12:00:00');
+    return d.toLocaleDateString('zh-Hant-TW', { month:'numeric', day:'numeric', weekday:'short' });
+  }
+
+  function haversineMeters(lat1, lon1, lat2, lon2){
+    const R = 6371000;
+    const toRad = d => d * Math.PI / 180;
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon/2)*Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  }
+
+  function currentTZ(){
+    const v = $('tzOffset').value.trim();
+    return /^[+-]\d{2}:\d{2}$/.test(v) ? v : '+08:00';
+  }
+
+  /* ---------------- Google format mapping ---------------- */
+
+  function toGoogleObject(entry, tz){
+    const iso = entry.date + 'T12:00:00.000' + tz;
+    const base = { endTime: iso, startTime: iso };
+    if (entry.kind === 'stay'){
+      base.visit = {
+        hierarchyLevel: "0",
+        topCandidate: {
+          probability: "1.000000",
+          semanticType: "Unknown",
+          placeID: "",
+          placeLocation: "geo:" + entry.stay.lat.toFixed(6) + "," + entry.stay.lng.toFixed(6)
+        },
+        probability: "1.000000"
+      };
+    } else {
+      base.activity = {
+        probability: "1.000000",
+        end: "geo:" + entry.trip.bLat.toFixed(6) + "," + entry.trip.bLng.toFixed(6),
+        topCandidate: { type: entry.trip.mode, probability: "1.000000" },
+        distanceMeters: Number(entry.trip.distanceMeters || 0).toFixed(6),
+        start: "geo:" + entry.trip.aLat.toFixed(6) + "," + entry.trip.aLng.toFixed(6)
+      };
+    }
+    return base;
+  }
+
+  function fromGoogleObject(obj){
+    function dateOf(iso){ return String(iso).slice(0,10); }
+    function tzOf(iso){
+      const m = String(iso).match(/([+-]\d{2}:\d{2}|Z)$/);
+      return m ? (m[1] === 'Z' ? '+00:00' : m[1]) : null;
+    }
+    const date = dateOf(obj.startTime);
+    const tz = tzOf(obj.startTime);
+
+    if (obj.visit){
+      const loc = ((obj.visit.topCandidate && obj.visit.topCandidate.placeLocation) || 'geo:0,0').replace('geo:','').split(',');
+      return { tz, entry: {
+        id: uuid(), kind:'stay', date,
+        stay: { lat: parseFloat(loc[0]) || 0, lng: parseFloat(loc[1]) || 0, label: '' }
+      }};
+    } else if (obj.activity){
+      const s = ((obj.activity.start) || 'geo:0,0').replace('geo:','').split(',');
+      const e = ((obj.activity.end) || 'geo:0,0').replace('geo:','').split(',');
+      return { tz, entry: {
+        id: uuid(), kind:'trip', date,
+        trip: {
+          aLat: parseFloat(s[0]) || 0, aLng: parseFloat(s[1]) || 0, aLabel:'',
+          bLat: parseFloat(e[0]) || 0, bLng: parseFloat(e[1]) || 0, bLabel:'',
+          mode: (obj.activity.topCandidate && obj.activity.topCandidate.type) || 'unknown activity type',
+          distanceMeters: parseFloat(obj.activity.distanceMeters) || 0
+        }
+      }};
+    }
+    return null;
+  }
+
+  /* ---------------- map setup ---------------- */
+
+  const map = L.map('pickerMap').setView([25.0330, 121.5654], 12);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors',
+    maxZoom: 19
+  }).addTo(map);
+
+  const icons = {
+    A: L.divIcon({ className:'pin-wrap', html:'<div class="pin-dot pin-a">A</div>', iconSize:[26,26], iconAnchor:[13,13] }),
+    B: L.divIcon({ className:'pin-wrap', html:'<div class="pin-dot pin-b">B</div>', iconSize:[26,26], iconAnchor:[13,13] })
+  };
+
+  /* ---------------- trajectory preview ---------------- */
+
+  const previewMap = L.map('previewMap').setView([25.0330, 121.5654], 12);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors',
+    maxZoom: 19
+  }).addTo(previewMap);
+  const previewLayer = L.layerGroup().addTo(previewMap);
+  let animFrame = null;
+  let animMarker = null;
+
+  function buildWaypoints(){
+    const wp = [];
+    entries.forEach(entry => {
+      if (entry.kind === 'stay'){
+        wp.push({ lat: entry.stay.lat, lng: entry.stay.lng, label: entry.stay.label || '停留', date: entry.date, color: '#E0A458' });
+      } else {
+        wp.push({ lat: entry.trip.aLat, lng: entry.trip.aLng, label: entry.trip.aLabel || 'A 點', date: entry.date, color: '#E0A458' });
+        wp.push({ lat: entry.trip.bLat, lng: entry.trip.bLng, label: entry.trip.bLabel || 'B 點', date: entry.date, color: '#55A8E0' });
+      }
+    });
+    return wp;
+  }
+
+  function renderPreviewRoute(){
+    stopAnimation();
+    previewLayer.clearLayers();
+    const wp = buildWaypoints();
+    $('previewEmpty').style.display = wp.length === 0 ? 'block' : 'none';
+    if (wp.length === 0) return;
+
+    const latlngs = wp.map(p => [p.lat, p.lng]);
+    if (latlngs.length > 1){
+      L.polyline(latlngs, { color:'#55A8E0', weight:3, opacity:0.75, dashArray:'6,6' }).addTo(previewLayer);
+    }
+    wp.forEach(p => {
+      const marker = L.circleMarker([p.lat, p.lng], {
+        radius:7, color:'#0E141C', weight:2, fillColor:p.color, fillOpacity:1
+      }).addTo(previewLayer);
+      marker.bindPopup('<b>' + escapeHtml(p.date) + '</b><br>' + escapeHtml(p.label));
+    });
+    if (latlngs.length === 1){
+      previewMap.setView(latlngs[0], 14);
+    } else {
+      previewMap.fitBounds(L.latLngBounds(latlngs), { padding:[30,30] });
+    }
+  }
+
+  function stopAnimation(){
+    if (animFrame){ cancelAnimationFrame(animFrame); animFrame = null; }
+    if (animMarker){ previewMap.removeLayer(animMarker); animMarker = null; }
+    $('playBtn').disabled = false;
+    $('stopBtn').hidden = true;
+  }
+
+  function playAnimation(){
+    const wp = buildWaypoints();
+    if (wp.length < 2) return;
+    stopAnimation();
+    const latlngs = wp.map(p => [p.lat, p.lng]);
+    const dists = [0];
+    for (let i = 1; i < latlngs.length; i++){
+      dists.push(dists[i-1] + haversineMeters(latlngs[i-1][0], latlngs[i-1][1], latlngs[i][0], latlngs[i][1]));
+    }
+    const total = dists[dists.length-1] || 1;
+    const durationMs = 6000;
+    animMarker = L.circleMarker(latlngs[0], { radius:8, color:'#fff', weight:2, fillColor:'#E2694F', fillOpacity:1 }).addTo(previewMap);
+    $('playBtn').disabled = true;
+    $('stopBtn').hidden = false;
+    const startTime = performance.now();
+    function step(now){
+      const t = Math.min(1, (now - startTime) / durationMs);
+      const targetDist = t * total;
+      let idx = 0;
+      while (idx < dists.length - 1 && dists[idx+1] < targetDist) idx++;
+      const segStart = dists[idx], segEnd = dists[idx+1] != null ? dists[idx+1] : segStart;
+      const segT = segEnd > segStart ? (targetDist - segStart) / (segEnd - segStart) : 0;
+      const p0 = latlngs[idx], p1 = latlngs[Math.min(idx+1, latlngs.length-1)];
+      const lat = p0[0] + (p1[0]-p0[0]) * segT;
+      const lng = p0[1] + (p1[1]-p0[1]) * segT;
+      if (animMarker) animMarker.setLatLng([lat, lng]);
+      if (t < 1){
+        animFrame = requestAnimationFrame(step);
+      } else {
+        $('playBtn').disabled = false;
+        $('stopBtn').hidden = true;
+        animFrame = null;
+      }
+    }
+    animFrame = requestAnimationFrame(step);
+  }
+
+  $('playBtn').addEventListener('click', () => {
+    const wp = buildWaypoints();
+    if (wp.length < 2){ alert('至少需要 2 個地點才能播放軌跡動畫。'); return; }
+    playAnimation();
+  });
+  $('stopBtn').addEventListener('click', stopAnimation);
+
+  function updateCoordDisplay(key){
+    const el = key === 'A' ? $('aCoord') : $('bCoord');
+    if (points[key]) el.textContent = points[key].lat.toFixed(5) + ', ' + points[key].lng.toFixed(5);
+  }
+
+  function updateDistanceDisplay(){
+    const el = $('distReadout');
+    if (points.A && points.B){
+      liveDistance = haversineMeters(points.A.lat, points.A.lng, points.B.lat, points.B.lng);
+      el.textContent = '距離：' + (liveDistance/1000).toFixed(2) + ' 公里';
+    } else {
+      liveDistance = 0;
+      el.textContent = '距離：請先設定 A、B 兩點';
+    }
+  }
+
+  function syncMarkersVisibility(){
+    if (points.B && points.B.marker){
+      const shouldShow = currentKind === 'trip';
+      const has = map.hasLayer(points.B.marker);
+      if (shouldShow && !has) points.B.marker.addTo(map);
+      if (!shouldShow && has) map.removeLayer(points.B.marker);
+    }
+  }
+
+  function setPoint(key, lat, lng){
+    if (!points[key]) points[key] = {};
+    points[key].lat = lat; points[key].lng = lng;
+    if (!points[key].marker){
+      const marker = L.marker([lat,lng], { icon: icons[key], draggable:true }).addTo(map);
+      marker.on('dragend', () => {
+        const ll = marker.getLatLng();
+        points[key].lat = ll.lat; points[key].lng = ll.lng;
+        updateCoordDisplay(key);
+        updateDistanceDisplay();
+        reverseGeocode(ll.lat, ll.lng).then(name => { if (name) setLabelIfEmpty(key, name); });
+      });
+      points[key].marker = marker;
+    } else {
+      points[key].marker.setLatLng([lat,lng]);
+    }
+    syncMarkersVisibility();
+    updateCoordDisplay(key);
+    updateDistanceDisplay();
+  }
+
+  function clearPoints(){
+    ['A','B'].forEach(k => {
+      if (points[k] && points[k].marker) map.removeLayer(points[k].marker);
+    });
+    points = {};
+    $('aLabel').value = ''; $('bLabel').value = '';
+    $('aCoord').textContent = ''; $('bCoord').textContent = '';
+    updateDistanceDisplay();
+  }
+
+  function setLabelIfEmpty(key, name){
+    const input = key === 'A' ? $('aLabel') : $('bLabel');
+    if (!input.value.trim()) input.value = name.split(',')[0].trim();
+  }
+
+  async function reverseGeocode(lat, lng){
+    try{
+      const url = 'https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng + '&zoom=17&addressdetails=0';
+      const res = await fetch(url, { headers: { 'Accept-Language':'zh-TW' } });
+      if (!res.ok) return null;
+      const data = await res.json();
+      return (data && data.display_name) ? data.display_name : null;
+    }catch(e){ return null; }
+  }
+
+  async function doSearch(){
+    const q = $('searchInput').value.trim();
+    if (!q) return;
+    const btn = $('searchBtn');
+    btn.disabled = true; btn.textContent = '搜尋中…';
+    try{
+      const url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&accept-language=zh-TW&q=' + encodeURIComponent(q);
+      const res = await fetch(url);
+      const data = await res.json();
+      if (!data || !data.length){
+        alert('找不到「' + q + '」，請試著輸入更完整的地址，或直接在地圖上點選。');
+        return;
+      }
+      const lat = parseFloat(data[0].lat), lon = parseFloat(data[0].lon);
+      setPoint(activePoint, lat, lon);
+      const input = activePoint === 'A' ? $('aLabel') : $('bLabel');
+      input.value = q;
+      map.setView([lat, lon], 16);
+    }catch(e){
+      alert('搜尋失敗，可能是網路問題，請直接在地圖上點選要設定的位置。');
+    }finally{
+      btn.disabled = false; btn.textContent = '搜尋';
+    }
+  }
+  $('searchBtn').addEventListener('click', doSearch);
+  $('searchInput').addEventListener('keydown', (e) => { if (e.key === 'Enter'){ e.preventDefault(); doSearch(); } });
+
+  map.on('click', (e) => {
+    setPoint(activePoint, e.latlng.lat, e.latlng.lng);
+    reverseGeocode(e.latlng.lat, e.latlng.lng).then(name => { if (name) setLabelIfEmpty(activePoint, name); });
+  });
+
+  document.querySelectorAll('.point-btn').forEach(b => {
+    b.addEventListener('click', () => {
+      activePoint = b.dataset.point;
+      document.querySelectorAll('.point-btn').forEach(x => x.classList.toggle('active', x === b));
+    });
+  });
+
+  /* ---------------- persistence ---------------- */
+
+  async function persist(){
+    try{
+      await window.storage.set('timeline_entries_v2', JSON.stringify({
+        entries: entries, tzOffset: currentTZ()
+      }), false);
+      setAutosave('已自動儲存 · ' + new Date().toLocaleTimeString('zh-Hant', {hour:'2-digit',minute:'2-digit',hour12:false}));
+    }catch(e){
+      console.error('storage set failed', e);
+      setAutosave('自動儲存失敗（畫面上的資料不受影響）');
+    }
+  }
+
+  async function loadPersisted(){
+    try{
+      const res = await window.storage.get('timeline_entries_v2', false);
+      if (res && res.value){
+        const data = JSON.parse(res.value);
+        entries = Array.isArray(data.entries) ? data.entries : [];
+        if (data.tzOffset) $('tzOffset').value = data.tzOffset;
+      }
+    }catch(e){
+      entries = [];
+    }
+    sortEntries();
+    render();
+  }
+
+  function setAutosave(text){ $('autosaveStatus').textContent = text; }
+
+  /* ---------------- tabs / kind ---------------- */
+
+  function setKind(kind){
+    currentKind = kind;
+    document.querySelectorAll('.tab').forEach(t => {
+      const active = t.dataset.kind === kind;
+      t.classList.toggle('active', active);
+      t.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    $('pointToggle').hidden = kind !== 'trip';
+    $('bBlock').hidden = kind !== 'trip';
+    $('aLabelCaption').textContent = kind === 'stay' ? '地點名稱' : 'A 點名稱';
+    if (kind === 'stay'){
+      activePoint = 'A';
+      document.querySelectorAll('.point-btn').forEach(x => x.classList.toggle('active', x.dataset.point === 'A'));
+    }
+    syncMarkersVisibility();
+  }
+
+  document.querySelectorAll('.tab').forEach(t => {
+    t.addEventListener('click', () => setKind(t.dataset.kind));
+  });
+
+  /* ---------------- form ---------------- */
+
+  function resetForm(){
+    editingId = null;
+    clearPoints();
+    $('tripMode').value = 'walking';
+    $('submitBtn').textContent = '＋ 新增這筆';
+    $('cancelEditBtn').hidden = true;
+    setKind(currentKind);
+  }
+  $('cancelEditBtn').addEventListener('click', resetForm);
+
+  $('entryForm').addEventListener('submit', (ev) => {
+    ev.preventDefault();
+    const date = $('entryDate').value;
+    if (!date){ alert('請選擇日期。'); return; }
+
+    let entry;
+    if (currentKind === 'stay'){
+      if (!points.A){ alert('請在地圖上設定地點。'); return; }
+      entry = {
+        id: editingId || uuid(), kind:'stay', date,
+        stay: { lat: points.A.lat, lng: points.A.lng, label: $('aLabel').value.trim() }
+      };
+    } else {
+      if (!points.A || !points.B){ alert('請設定 A 點與 B 點。'); return; }
+      entry = {
+        id: editingId || uuid(), kind:'trip', date,
+        trip: {
+          aLat: points.A.lat, aLng: points.A.lng, aLabel: $('aLabel').value.trim(),
+          bLat: points.B.lat, bLng: points.B.lng, bLabel: $('bLabel').value.trim(),
+          mode: $('tripMode').value,
+          distanceMeters: liveDistance || haversineMeters(points.A.lat, points.A.lng, points.B.lat, points.B.lng)
+        }
+      };
+    }
+
+    if (editingId){
+      const idx = entries.findIndex(e => e.id === editingId);
+      if (idx !== -1) entries[idx] = entry; else entries.push(entry);
+    } else {
+      entries.push(entry);
+    }
+    sortEntries();
+    resetForm();
+    render();
+    persist();
+  });
+
+  function sortEntries(){
+    entries.sort((a,b) => a.date.localeCompare(b.date));
+  }
+
+  /* ---------------- edit / delete ---------------- */
+
+  function editEntry(id){
+    const entry = entries.find(e => e.id === id);
+    if (!entry) return;
+    editingId = id;
+    clearPoints();
+    setKind(entry.kind);
+    $('entryDate').value = entry.date;
+    if (entry.kind === 'stay'){
+      setPoint('A', entry.stay.lat, entry.stay.lng);
+      $('aLabel').value = entry.stay.label || '';
+      map.setView([entry.stay.lat, entry.stay.lng], 15);
+    } else {
+      setPoint('A', entry.trip.aLat, entry.trip.aLng);
+      setPoint('B', entry.trip.bLat, entry.trip.bLng);
+      $('aLabel').value = entry.trip.aLabel || '';
+      $('bLabel').value = entry.trip.bLabel || '';
+      $('tripMode').value = entry.trip.mode;
+      const bounds = L.latLngBounds([[entry.trip.aLat, entry.trip.aLng],[entry.trip.bLat, entry.trip.bLng]]);
+      map.fitBounds(bounds, { padding:[50,50] });
+    }
+    $('submitBtn').textContent = '✓ 更新這筆';
+    $('cancelEditBtn').hidden = false;
+    document.querySelector('.form-panel').scrollIntoView({ behavior:'smooth', block:'start' });
+  }
+
+  function deleteEntry(id){
+    if (!confirm('確定要刪除這筆紀錄嗎？')) return;
+    entries = entries.filter(e => e.id !== id);
+    if (editingId === id) resetForm();
+    render();
+    persist();
+  }
+
+  /* ---------------- rendering ---------------- */
+
+  function render(){
+    const ul = $('timelineList');
+    ul.innerHTML = '';
+    $('emptyState').style.display = entries.length === 0 ? 'block' : 'none';
+
+    entries.forEach(entry => {
+      const li = document.createElement('li');
+      li.className = 'log-row ' + entry.kind;
+
+      let detail;
+      if (entry.kind === 'stay'){
+        const label = entry.stay.label || (entry.stay.lat.toFixed(4) + ', ' + entry.stay.lng.toFixed(4));
+        detail = '<span class="badge badge-stay">停留</span> ' + escapeHtml(label);
+      } else {
+        const aName = entry.trip.aLabel || (entry.trip.aLat.toFixed(4) + ',' + entry.trip.aLng.toFixed(4));
+        const bName = entry.trip.bLabel || (entry.trip.bLat.toFixed(4) + ',' + entry.trip.bLng.toFixed(4));
+        const modeText = modeLabels[entry.trip.mode] || entry.trip.mode;
+        detail = '<span class="badge badge-trip">移動</span> ' + escapeHtml(aName) + ' → ' + escapeHtml(bName)
+          + ' · ' + escapeHtml(modeText) + ' · ' + (entry.trip.distanceMeters/1000).toFixed(2) + ' km';
+      }
+
+      li.innerHTML =
+        '<div class="marker"></div>' +
+        '<div class="row-main">' +
+          '<div class="row-time">' + fmtDateLabel(entry.date) + '</div>' +
+          '<div class="row-detail">' + detail + '</div>' +
+        '</div>' +
+        '<div class="row-actions">' +
+          '<button type="button" class="icon-btn edit-btn" data-id="' + entry.id + '" title="編輯" aria-label="編輯">✎</button>' +
+          '<button type="button" class="icon-btn del-btn" data-id="' + entry.id + '" title="刪除" aria-label="刪除">🗑</button>' +
+        '</div>';
+      ul.appendChild(li);
+    });
+
+    ul.querySelectorAll('.edit-btn').forEach(b => b.addEventListener('click', () => editEntry(b.dataset.id)));
+    ul.querySelectorAll('.del-btn').forEach(b => b.addEventListener('click', () => deleteEntry(b.dataset.id)));
+
+    updateSummary();
+    updateExportPreview();
+    renderPreviewRoute();
+  }
+
+  function updateSummary(){
+    const el = $('summaryText');
+    if (entries.length === 0){ el.textContent = '尚無資料'; return; }
+    el.textContent = '共 ' + entries.length + ' 筆 · ' + entries[0].date + ' – ' + entries[entries.length-1].date;
+  }
+
+  function updateExportPreview(){
+    const tz = currentTZ();
+    const arr = entries.map(e => toGoogleObject(e, tz));
+    const text = JSON.stringify(arr, null, 2);
+    $('jsonPreview').value = text;
+    $('jsonPreviewPre').textContent = text;
+  }
+
+  $('tzOffset').addEventListener('input', () => { updateExportPreview(); persist(); });
+
+  /* ---------------- export actions ---------------- */
+
+  $('copyBtn').addEventListener('click', async () => {
+    try{
+      await navigator.clipboard.writeText($('jsonPreview').value);
+      const btn = $('copyBtn');
+      const original = btn.textContent;
+      btn.textContent = '已複製 ✓';
+      btn.classList.add('copy-flash');
+      setTimeout(() => { btn.textContent = original; btn.classList.remove('copy-flash'); }, 1600);
+    }catch(e){
+      alert('複製失敗，請手動選取文字後複製。');
+    }
+  });
+
+  $('downloadBtn').addEventListener('click', () => {
+    const blob = new Blob([$('jsonPreview').value], { type:'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const stamp = new Date().toISOString().slice(0,10);
+    a.href = url;
+    a.download = 'timeline-' + stamp + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  $('clearAllBtn').addEventListener('click', () => {
+    if (entries.length === 0) return;
+    if (!confirm('確定要清空全部 ' + entries.length + ' 筆紀錄嗎？此動作無法復原。')) return;
+    entries = [];
+    resetForm();
+    render();
+    persist();
+  });
+
+  /* ---------------- import ---------------- */
+
+  $('importBtn').addEventListener('click', () => $('importFile').click());
+
+  $('importFile').addEventListener('change', (ev) => {
+    const file = ev.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try{
+        const data = JSON.parse(reader.result);
+        if (!Array.isArray(data)) throw new Error('not an array');
+        const mapped = data.map(fromGoogleObject).filter(Boolean);
+        if (mapped.length === 0){
+          alert('這個檔案裡沒有找到可辨識的資料。');
+          return;
+        }
+        let foundTz = null;
+        mapped.forEach(m => { if (!foundTz && m.tz) foundTz = m.tz; });
+        const replace = confirm('匯入 ' + mapped.length + ' 筆資料。\n按「確定」取代目前所有資料，按「取消」改為合併加入現有資料。');
+        if (replace){
+          entries = mapped.map(m => m.entry);
+        } else {
+          entries = entries.concat(mapped.map(m => m.entry));
+        }
+        if (foundTz) $('tzOffset').value = foundTz;
+        sortEntries();
+        resetForm();
+        render();
+        persist();
+      }catch(e){
+        alert('匯入失敗，請確認這是合法的 JSON 檔案。');
+      }
+    };
+    reader.readAsText(file);
+    ev.target.value = '';
+  });
+
+  /* ---------------- init ---------------- */
+
+  $('entryDate').value = new Date().toISOString().slice(0,10);
+  setKind('stay');
+  updateDistanceDisplay();
+  loadPersisted();
+
+})();
+</script>
+</body>
+</html>
