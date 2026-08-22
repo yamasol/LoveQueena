@@ -68,6 +68,31 @@
       color: var(--text-muted);
     }
 
+    .inapp-warning {
+      display: none;
+      position: relative;
+      background: #4a3200;
+      color: #ffd166;
+      border-bottom: 1px solid #6b4a00;
+      padding: 12px 40px 12px 16px;
+      font-size: 0.82rem;
+      line-height: 1.6;
+    }
+    .inapp-warning.show { display: block; }
+    .inapp-warning strong { color: #fff; }
+    .inapp-warning .close-btn {
+      position: absolute;
+      right: 10px;
+      top: 8px;
+      background: none;
+      border: none;
+      color: #ffd166;
+      font-weight: bold;
+      font-size: 1rem;
+      cursor: pointer;
+      padding: 4px 6px;
+    }
+
     /* 步驟指示器 */
     .stepper {
       display: flex;
@@ -332,8 +357,14 @@
 </head>
 <body>
 
+  <div class="inapp-warning" id="inAppWarning">
+    <button class="close-btn" onclick="this.parentElement.classList.remove('show')">✕</button>
+    ⚠️ <strong>偵測到您可能是從 Instagram / Facebook / LINE 等 App 內建瀏覽器開啟這個頁面。</strong>
+    這類內建瀏覽器<strong>經常無法正常下載或分享檔案</strong>。建議點擊畫面右上角的「⋯」或分享圖示,選擇<strong>「在瀏覽器中開啟」(Open in Browser / Safari / Chrome)</strong>,改用手機原生瀏覽器重新打開這個頁面,才能順利存檔。
+  </div>
+
   <header>
-    <h1>📍 相片時間軸還原工具 <span class="version-badge">V1.0.1</span></h1>
+    <h1>📍 相片時間軸還原工具 <span class="version-badge">V1.1.1</span></h1>
     <div class="stepper" id="stepper">
       <div class="dot active" data-step="1">1</div>
       <span class="label active" data-step="1">說明</span>
@@ -360,6 +391,7 @@
           <div class="how-step"><span class="num">3</span> 到 Timeline Visualizer 上傳,產生路線預覽影片</div>
         </div>
         <p class="tip">💡 建議挑選「同一天、有開定位拍照」的照片,張數越多、時間跨度越完整,還原出來的軌跡越準確。整個過程照片都只在你的瀏覽器裡處理,不會上傳到任何伺服器。</p>
+        <p class="tip">📱 若你是從 Instagram / Facebook / LINE 等 App 點連結進來,請先點右上角「⋯」選「在瀏覽器中開啟」,改用手機原生瀏覽器(Safari / Chrome)操作,下載檔案才會正常。</p>
         <button class="btn-primary btn-block" onclick="goToStep(2)">開始選擇照片 →</button>
       </div>
     </section>
@@ -385,7 +417,7 @@
 
           <details id="manualFallback">
             <summary>⚠️ 沒有跳出下載或分享視窗?改用手動複製存檔</summary>
-            <p class="upload-hint">如果按了上面的按鈕後,只跳出一個顯示一堆文字的新分頁(網址開頭是 <code>blob:</code>),代表你的瀏覽器不支援直接下載:<br>
+            <p class="upload-hint">如果按了上面的按鈕後,只跳出一個顯示一堆文字的新分頁(網址開頭是 <code>blob:</code>),通常是因為正在用 <strong>Instagram / Facebook / LINE 等 App 內建瀏覽器</strong>開啟此頁(這類瀏覽器會擋掉下載功能)。最簡單的解法是點右上角「⋯」選「在瀏覽器中開啟」,改用 Safari / Chrome 重新操作一次;若不方便切換,也可以用下面的方式手動存檔:<br>
             1. 點選下方「複製 JSON 內容」<br>
             2. 打開手機的「備忘錄 / 記事本」App,貼上剛複製的內容<br>
             3. 另存新檔,檔名設為 <strong id="fallbackFilename">timeline.json</strong>(副檔名務必是 <code>.json</code>)</p>
@@ -425,7 +457,7 @@
   </main>
 
   <footer class="app-footer">
-    V1.0.1 · 使用 Claude Sonnet 5 製作 · 作者:睡覺的紅豬
+    V1.1.1 · 使用 Claude Sonnet 5 製作 · 作者:睡覺的紅豬
   </footer>
 
   <script>
@@ -438,7 +470,16 @@
     window.onload = function() {
       document.getElementById('maxPhotosLabel').textContent = MAX_PHOTOS;
       document.getElementById('fileInput').addEventListener('change', handlePhotos);
+      if (isInAppBrowser()) {
+        document.getElementById('inAppWarning').classList.add('show');
+      }
     };
+
+    // IG / FB / LINE / 微信等 App 內建瀏覽器通常會擋掉下載、分享、剪貼簿權限
+    function isInAppBrowser() {
+      const ua = navigator.userAgent || '';
+      return /Instagram|FBAN|FBAV|FB_IAB|Line\/|MicroMessenger|TikTok|musical_ly|Snapchat/i.test(ua);
+    }
 
     // ---------- 步驟切換 ----------
     function goToStep(n) {
