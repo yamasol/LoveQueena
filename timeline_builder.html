@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Google 地圖時間軸 (Timeline) 復原與產生工具</title>
+  <title>相片時間軸還原工具</title>
   <!-- ExifReader CDN: 支援 HEIC/JPG 照片 EXIF 解析 -->
   <script src="https://cdn.jsdelivr.net/npm/exifreader@4.44.0/dist/exif-reader.min.js"></script>
   <!-- Leaflet CSS & JS: 免費開源互動式地圖 -->
@@ -13,12 +13,14 @@
     :root {
       --bg-color: #121212;
       --card-bg: #1e1e1e;
+      --card-bg-alt: #262626;
       --border-color: #333;
       --accent-color: #4da6ff;
       --text-color: #e0e0e0;
-      --text-muted: #aaa;
+      --text-muted: #999;
       --visit-color: #4caf50;
       --activity-color: #ff9800;
+      --danger-color: #ff5252;
     }
     * { box-sizing: border-box; }
     body {
@@ -27,279 +29,458 @@
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       background-color: var(--bg-color);
       color: var(--text-color);
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      overflow: hidden;
+      min-height: 100vh;
     }
     header {
       background: #181818;
       border-bottom: 1px solid var(--border-color);
-      padding: 12px 20px;
+      padding: 14px 20px;
       display: flex;
-      justify-content: space-between;
-      align-items: center;
+      flex-direction: column;
+      gap: 10px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
     }
     header h1 {
       margin: 0;
-      font-size: 1.2rem;
+      font-size: 1.1rem;
       color: var(--accent-color);
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
-    .header-btns button {
+    .version-badge {
+      font-size: 0.65rem;
+      font-weight: normal;
+      color: var(--text-muted);
+      background: var(--card-bg-alt);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 2px 8px;
+    }
+    footer.app-footer {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 0 16px 30px 16px;
+      text-align: center;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    /* 步驟指示器 */
+    .stepper {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .stepper .dot {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #333;
+      color: #aaa;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 0.75rem;
+      flex-shrink: 0;
+      transition: background 0.2s, color 0.2s;
+    }
+    .stepper .dot.active { background: var(--accent-color); color: #000; }
+    .stepper .dot.done { background: var(--visit-color); color: #000; }
+    .stepper .label {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-right: 4px;
+      white-space: nowrap;
+    }
+    .stepper .label.active { color: var(--text-color); font-weight: bold; }
+    .stepper .line {
+      flex: 1;
+      max-width: 40px;
+      height: 2px;
+      background: #333;
+    }
+    .stepper .line.done { background: var(--visit-color); }
+
+    .wizard {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 20px 16px 60px 16px;
+    }
+    .step { display: none; }
+    .step.active { display: block; }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 22px;
+    }
+    .card h2 {
+      margin: 0 0 14px 0;
+      font-size: 1.15rem;
+      color: var(--text-color);
+    }
+    .card p { line-height: 1.6; font-size: 0.92rem; }
+    .tip {
+      background: rgba(77, 166, 255, 0.08);
+      border-left: 3px solid var(--accent-color);
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-size: 0.85rem !important;
+      color: var(--text-muted);
+    }
+
+    .how-it-works {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin: 18px 0;
+    }
+    .how-step {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--card-bg-alt);
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 0.9rem;
+    }
+    .how-step .num {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
       background: var(--accent-color);
       color: #000;
-      border: none;
-      padding: 8px 16px;
-      border-radius: 4px;
       font-weight: bold;
-      cursor: pointer;
-      margin-left: 8px;
-    }
-    .main-container {
       display: flex;
-      flex: 1;
-      height: calc(100vh - 57px);
-      overflow: hidden;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 0.85rem;
     }
-    .panel-left {
-      width: 420px;
-      background: var(--card-bg);
-      border-right: 1px solid var(--border-color);
-      display: flex;
-      flex-direction: column;
-    }
-    .panel-right {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-    }
-    #map {
-      flex: 1;
-      background: #222;
-    }
-    .drop-area {
-      margin: 15px;
-      padding: 20px;
-      border: 2px dashed var(--accent-color);
+
+    .btn-primary, .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      border: none;
+      padding: 12px 18px;
       border-radius: 8px;
+      font-weight: bold;
+      font-size: 0.92rem;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .btn-primary {
+      background: var(--accent-color);
+      color: #000;
+    }
+    .btn-primary:disabled {
+      background: #444;
+      color: #888;
+      cursor: not-allowed;
+    }
+    .btn-secondary {
+      background: #333;
+      color: #fff;
+      border: 1px solid #555;
+    }
+    .btn-block { display: flex; width: 100%; margin-top: 8px; }
+
+    .nav-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 18px;
+    }
+    .nav-row .btn-primary, .nav-row .btn-secondary { flex: 1; }
+
+    .drop-area {
+      padding: 26px 16px;
+      border: 2px dashed var(--accent-color);
+      border-radius: 10px;
       text-align: center;
       background: rgba(77, 166, 255, 0.05);
       cursor: pointer;
       transition: background 0.2s;
     }
-    .drop-area:hover {
-      background: rgba(77, 166, 255, 0.15);
+    .drop-area:hover { background: rgba(77, 166, 255, 0.15); }
+    .drop-area .big { font-weight: bold; font-size: 1rem; }
+    .upload-hint {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-top: 6px;
     }
-    .timeline-list {
-      flex: 1;
+
+    #resultsBox { margin-top: 18px; }
+    #resultsSummary {
+      font-size: 0.9rem;
+      font-weight: bold;
+      color: var(--visit-color);
+      margin-bottom: 10px;
+    }
+    #map {
+      height: 240px;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 14px;
+      background: #222;
+    }
+    .point-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 260px;
       overflow-y: auto;
-      padding: 0 15px 15px 15px;
+      margin-bottom: 10px;
     }
-    .timeline-item {
-      background: #282828;
+    .point-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--card-bg-alt);
+      border-left: 3px solid var(--visit-color);
       border-radius: 6px;
-      padding: 12px;
-      margin-bottom: 12px;
-      border-left: 4px solid #888;
+      padding: 8px 10px;
       position: relative;
     }
-    .timeline-item.visit { border-left-color: var(--visit-color); }
-    .timeline-item.activity { border-left-color: var(--activity-color); }
-    
-    .item-header {
-      display: flex;
-      justify-content: space-between;
-      font-weight: bold;
-      margin-bottom: 8px;
-      font-size: 0.9rem;
-    }
-    .type-visit { color: var(--visit-color); }
-    .type-activity { color: var(--activity-color); }
-    
-    .form-group {
-      margin-bottom: 8px;
-      display: flex;
-      align-items: center;
-    }
-    .form-group label {
-      width: 70px;
-      font-size: 0.8rem;
-      color: var(--text-muted);
-    }
-    .form-group input, .form-group select {
-      flex: 1;
-      background: #181818;
-      border: 1px solid var(--border-color);
-      color: var(--text-color);
-      padding: 4px 8px;
-      border-radius: 4px;
+    .point-icon { font-size: 1.1rem; }
+    .point-info { flex: 1; min-width: 0; }
+    .point-name {
       font-size: 0.85rem;
+      font-weight: bold;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
+    .point-meta { font-size: 0.75rem; color: var(--text-muted); }
     .btn-delete {
-      position: absolute;
-      right: 10px;
-      top: 10px;
       background: none;
       border: none;
-      color: #ff5252;
+      color: var(--danger-color);
       cursor: pointer;
       font-weight: bold;
+      font-size: 0.95rem;
+      padding: 4px 6px;
+      flex-shrink: 0;
     }
-    .controls {
-      padding: 10px 15px;
-      display: flex;
-      gap: 10px;
-    }
-    .btn-secondary {
-      flex: 1;
-      background: #333;
-      color: #fff;
-      border: 1px solid #555;
-      padding: 8px;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    .json-preview {
-      height: 200px;
-      background: #151515;
-      border-top: 1px solid var(--border-color);
-      padding: 10px;
-      overflow-y: auto;
-      font-family: monospace;
-      font-size: 0.8rem;
-      color: #00ff66;
-    }
-    .header-btns {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      align-items: center;
-    }
-    .header-btns button, .btn-link {
-      margin-left: 0;
-    }
-    .btn-link {
-      display: inline-block;
-      background: transparent;
-      color: var(--accent-color);
-      border: 1px solid var(--accent-color);
-      padding: 8px 16px;
-      border-radius: 4px;
-      font-weight: bold;
-      text-decoration: none;
-      font-size: 0.85rem;
-    }
-    .upload-hint {
-      font-size: 0.75rem;
+
+    details {
+      margin-top: 6px;
+      font-size: 0.82rem;
       color: var(--text-muted);
-      margin-top: 4px;
     }
-    .download-cta {
+    details summary { cursor: pointer; }
+    #jsonCode {
+      background: #151515;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 10px;
+      overflow-x: auto;
+      font-family: monospace;
+      font-size: 0.75rem;
+      color: #00ff66;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .download-banner {
       display: none;
-      margin: 0 15px 15px 15px;
-      padding: 12px;
+      margin-top: 14px;
+      padding: 12px 14px;
       background: rgba(76, 175, 80, 0.1);
       border: 1px solid var(--visit-color);
       border-radius: 8px;
-      text-align: center;
-    }
-    .download-cta.show { display: block; }
-    .download-cta p {
-      margin: 0 0 8px 0;
-      color: var(--visit-color);
       font-size: 0.85rem;
-      font-weight: bold;
+      color: var(--visit-color);
     }
-    .btn-download {
-      width: 100%;
-      background: var(--visit-color);
-      color: #fff;
+    .download-banner.show { display: block; }
+    .btn-link-inline {
+      background: none;
       border: none;
-      padding: 10px;
-      border-radius: 4px;
-      font-weight: bold;
+      color: var(--accent-color);
+      text-decoration: underline;
       cursor: pointer;
-      font-size: 0.9rem;
+      font-weight: bold;
+      font-size: 0.85rem;
+      padding: 0;
     }
 
-    @media (max-width: 768px) {
-      body { height: auto; min-height: 100vh; overflow: auto; }
-      header { flex-wrap: wrap; padding: 10px 12px; }
-      header h1 { font-size: 1rem; width: 100%; }
-      .header-btns { width: 100%; }
-      .header-btns button, .btn-link { flex: 1; text-align: center; padding: 10px 6px; font-size: 0.8rem; }
-      .main-container { flex-direction: column; height: auto; overflow: visible; }
-      .panel-left { width: 100%; border-right: none; border-bottom: 1px solid var(--border-color); }
-      .panel-right { min-height: 70vh; }
-      #map { height: 40vh; flex: none; }
-      .timeline-list { max-height: 50vh; }
-      .json-preview { height: 140px; }
-      .form-group label { width: 60px; font-size: 0.75rem; }
-      .controls { flex-direction: column; }
+    .guide-steps {
+      padding-left: 20px;
+      line-height: 1.9;
+      font-size: 0.9rem;
+    }
+    .guide-steps code {
+      background: #151515;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-size: 0.85rem;
+      color: var(--accent-color);
+    }
+
+    @media (max-width: 480px) {
+      .stepper .label { display: none; }
+      .wizard { padding: 16px 10px 50px 10px; }
+      .card { padding: 16px; }
     }
   </style>
 </head>
 <body>
 
   <header>
-    <h1>Google 時間軸 (Timeline) 復原生成器</h1>
-    <div class="header-btns">
-      <button onclick="exportJSON()">匯出 Google Timeline JSON</button>
-      <a class="btn-link" href="https://ahn-lab.org/google-timeline-visualizer/" target="_blank" rel="noopener noreferrer">🌐 用 Timeline Visualizer 檢視</a>
+    <h1>📍 相片時間軸還原工具 <span class="version-badge">V1.0.1</span></h1>
+    <div class="stepper" id="stepper">
+      <div class="dot active" data-step="1">1</div>
+      <span class="label active" data-step="1">說明</span>
+      <div class="line" data-line="1"></div>
+      <div class="dot" data-step="2">2</div>
+      <span class="label" data-step="2">選擇照片</span>
+      <div class="line" data-line="2"></div>
+      <div class="dot" data-step="3">3</div>
+      <span class="label" data-step="3">前往預覽</span>
     </div>
   </header>
 
-  <div class="main-container">
-    <div class="panel-left">
-      <div class="drop-area" onclick="document.getElementById('fileInput').click()">
-        <div><strong>批次拖入 iPhone 照片 (JPG / HEIC)</strong></div>
-        <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">自動讀取照片 EXIF 中的 GPS 與時間</div>
-        <div class="upload-hint">單次最多上傳 <span id="maxPhotosLabel"></span> 張(已優化為平行讀取,速度更快)</div>
-        <div class="upload-hint" id="uploadStatus" style="display:none; color:var(--accent-color); font-weight:600;"></div>
-        <input type="file" id="fileInput" multiple accept="image/*,.heic" style="display:none">
-      </div>
+  <main class="wizard">
 
-      <div class="controls">
-        <button class="btn-secondary" onclick="addManualItem('visit')">+ 手動新增停留 (Visit)</button>
-        <button class="btn-secondary" onclick="addManualItem('activity')">+ 手動新增移動 (Activity)</button>
+    <!-- 步驟 1:說明 -->
+    <section class="step active" id="step-1">
+      <div class="card">
+        <h2>👋 這個工具是做什麼的?</h2>
+        <p>如果你的手機<strong>沒有開啟 Google 地圖「時間軸 / 位置紀錄」</strong>,事後很難回顧某一天到底去了哪裡、怎麼移動的。</p>
+        <p>這個工具會讀取你<strong>相簿照片裡的 GPS 定位與拍攝時間</strong>(手機拍照時通常都會自動記錄),幫你重建出一份類似 Google 時間軸的軌跡紀錄。</p>
+        <div class="how-it-works">
+          <div class="how-step"><span class="num">1</span> 選擇約 60 張當天拍的照片</div>
+          <div class="how-step"><span class="num">2</span> 自動解析 GPS,轉換並下載成 JSON 檔</div>
+          <div class="how-step"><span class="num">3</span> 到 Timeline Visualizer 上傳,產生路線預覽影片</div>
+        </div>
+        <p class="tip">💡 建議挑選「同一天、有開定位拍照」的照片,張數越多、時間跨度越完整,還原出來的軌跡越準確。整個過程照片都只在你的瀏覽器裡處理,不會上傳到任何伺服器。</p>
+        <button class="btn-primary btn-block" onclick="goToStep(2)">開始選擇照片 →</button>
       </div>
+    </section>
 
-      <div class="download-cta" id="downloadCta">
-        <p id="downloadCtaText">✅ 已產生時間軸紀錄</p>
-        <button class="btn-download" onclick="exportJSON()">⬇ 下載 Google Timeline JSON</button>
-      </div>
+    <!-- 步驟 2:選擇照片並轉換 -->
+    <section class="step" id="step-2">
+      <div class="card">
+        <h2>📷 選擇照片</h2>
+        <div class="drop-area" onclick="document.getElementById('fileInput').click()">
+          <div class="big">點此選擇 / 拖入照片(JPG、HEIC)</div>
+          <div class="upload-hint">建議一次選擇 <span id="maxPhotosLabel"></span> 張左右,選好後會自動開始解析</div>
+          <div class="upload-hint" id="uploadStatus" style="display:none; color:var(--accent-color); font-weight:600;"></div>
+          <input type="file" id="fileInput" multiple accept="image/*,.heic" style="display:none">
+        </div>
 
-      <div class="timeline-list" id="timelineList">
-        <!-- 時間軸項目 -->
-      </div>
-    </div>
+        <div id="resultsBox" style="display:none;">
+          <p id="resultsSummary"></p>
+          <div id="map"></div>
+          <div class="point-list" id="pointList"></div>
+          <details>
+            <summary>進階:顯示原始 JSON 內容</summary>
+            <pre id="jsonCode">// 尚未產生</pre>
+          </details>
+        </div>
 
-    <div class="panel-right">
-      <div id="map"></div>
-      <div class="json-preview">
-        <pre id="jsonCode">// 即時輸出的 Google Timeline 格式 JSON 將顯示於此...</pre>
+        <div class="download-banner" id="downloadBanner"></div>
+
+        <div class="nav-row">
+          <button class="btn-secondary" onclick="goToStep(1)">← 上一步</button>
+          <button class="btn-primary" id="continueBtn" disabled onclick="goToStep(3)">下一步:前往預覽工具 →</button>
+        </div>
       </div>
-    </div>
-  </div>
+    </section>
+
+    <!-- 步驟 3:前往 Timeline Visualizer -->
+    <section class="step" id="step-3">
+      <div class="card">
+        <h2>🎬 產生軌跡預覽影片</h2>
+        <p>接下來請前往 <strong>Timeline Visualizer</strong> 網站,上傳剛剛下載的 JSON 檔案,幾個步驟就能生成一段路線動畫影片。</p>
+        <ol class="guide-steps">
+          <li>點擊下方按鈕,在新分頁開啟 Timeline Visualizer</li>
+          <li>在網站上找到 <code>Choose Timeline.json</code> 按鈕,選擇剛剛下載的檔案<br><strong id="guideFilename">(尚未下載)</strong></li>
+          <li>(可選)設定日期範圍、影片長度、鏡頭運鏡風格</li>
+          <li>點擊 <code>Preview</code> 先預覽路線</li>
+          <li>滿意後點擊 <code>Create MP4</code> 產生影片</li>
+        </ol>
+        <p class="tip">🔒 該網站聲明檔案只會在你自己的瀏覽器裡處理,不會把完整時間軸資料上傳到伺服器。</p>
+        <a class="btn-primary btn-block" href="https://ahn-lab.org/google-timeline-visualizer/" target="_blank" rel="noopener noreferrer">🌐 前往 Timeline Visualizer(新分頁開啟)</a>
+        <div class="nav-row">
+          <button class="btn-secondary" onclick="goToStep(2)">← 上一步</button>
+          <button class="btn-secondary" onclick="resetAll()">🔁 重新開始(處理下一批照片)</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="app-footer">
+    V1.0.1 · 使用 Claude Sonnet 5 製作 · 作者:睡覺的紅豬
+  </footer>
 
   <script>
-    let timelineData = [];
+    let photoPoints = [];   // 已解析出 GPS 的照片地點,依時間排序
+    let skippedCount = 0;   // 沒有 GPS 資訊而被略過的照片數
     let map, markersGroup;
+    let mapReady = false;
     const MAX_PHOTOS = 60;
 
-    // 初始化 Leaflet 地圖
     window.onload = function() {
-      map = L.map('map').setView([25.01, 121.60], 12);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors'
-      }).addTo(map);
-      markersGroup = L.layerGroup().addTo(map);
-
       document.getElementById('maxPhotosLabel').textContent = MAX_PHOTOS;
       document.getElementById('fileInput').addEventListener('change', handlePhotos);
     };
 
-    // 讀取單張照片的 EXIF GPS/時間;length:'auto' 只讀取包含 metadata 的檔案片段,不必載入整張照片
+    // ---------- 步驟切換 ----------
+    function goToStep(n) {
+      document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
+      document.getElementById('step-' + n).classList.add('active');
+
+      document.querySelectorAll('.stepper .dot').forEach(dot => {
+        const s = parseInt(dot.dataset.step, 10);
+        dot.classList.toggle('active', s === n);
+        dot.classList.toggle('done', s < n);
+        dot.textContent = s < n ? '✓' : s;
+      });
+      document.querySelectorAll('.stepper .label').forEach(label => {
+        label.classList.toggle('active', parseInt(label.dataset.step, 10) === n);
+      });
+      document.querySelectorAll('.stepper .line').forEach(line => {
+        line.classList.toggle('done', parseInt(line.dataset.line, 10) < n);
+      });
+
+      if (n === 2) ensureMap();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function ensureMap() {
+      if (!mapReady) {
+        map = L.map('map').setView([25.01, 121.60], 12);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+        markersGroup = L.layerGroup().addTo(map);
+        mapReady = true;
+      } else {
+        setTimeout(() => map.invalidateSize(), 50);
+      }
+    }
+
+    function resetAll() {
+      photoPoints = [];
+      skippedCount = 0;
+      document.getElementById('resultsBox').style.display = 'none';
+      document.getElementById('downloadBanner').classList.remove('show');
+      document.getElementById('continueBtn').disabled = true;
+      document.getElementById('guideFilename').textContent = '(尚未下載)';
+      goToStep(1);
+    }
+
+    // ---------- 讀取照片 EXIF ----------
+    // length:'auto' 只讀取包含 metadata 的檔案片段,不必載入整張照片
     // (依官方文件,length:'auto' 必須搭配 expanded + includeOffsets 使用;excludeTags.mpf 可避開內嵌預覽圖拖慢讀取)
     async function readPhotoItem(file) {
       try {
@@ -322,12 +503,11 @@
           }
 
           return {
-            type: 'visit',
             startTime: timeStr,
             endTime: timeStr,
             lat: gps.Latitude.toFixed(6),
             lng: gps.Longitude.toFixed(6),
-            placeName: file.name
+            placeName: file.name.replace(/\.[^.]+$/, '')
           };
         }
       } catch (err) {
@@ -336,14 +516,15 @@
       return null;
     }
 
-    // 處理上傳照片:平行讀取每張照片的 EXIF,大幅縮短多張照片的等待時間
+    // 平行讀取每張照片的 EXIF,大幅縮短多張照片的等待時間
     async function handlePhotos(e) {
       let files = Array.from(e.target.files);
       if (files.length > MAX_PHOTOS) {
-        alert(`一次最多可上傳 ${MAX_PHOTOS} 張照片。您選擇了 ${files.length} 張,僅會處理前 ${MAX_PHOTOS} 張。`);
+        alert(`一次最多可選 ${MAX_PHOTOS} 張照片。您選擇了 ${files.length} 張,僅會處理前 ${MAX_PHOTOS} 張。`);
         files = files.slice(0, MAX_PHOTOS);
       }
       e.target.value = '';
+      if (files.length === 0) return;
 
       const statusEl = document.getElementById('uploadStatus');
       let done = 0;
@@ -357,125 +538,78 @@
       })));
 
       statusEl.style.display = 'none';
-      let newItems = results.filter(Boolean);
+      const newPoints = results.filter(Boolean);
+      skippedCount += results.length - newPoints.length;
 
-      // 按時間排序(平行處理後順序可能被打亂,排序後才補上移動軌跡)
-      newItems.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
-      
-      // 自動推算前後移動軌跡
-      for (let i = 0; i < newItems.length; i++) {
-        timelineData.push(newItems[i]);
-        if (i < newItems.length - 1) {
-          // 自動補上點與點之間的移動 Segment
-          timelineData.push({
-            type: 'activity',
-            startTime: newItems[i].endTime,
-            endTime: newItems[i+1].startTime,
-            startLat: newItems[i].lat,
-            startLng: newItems[i].lng,
-            endLat: newItems[i+1].lat,
-            endLng: newItems[i+1].lng,
-            activityType: 'motorcycling'
-          });
-        }
+      photoPoints.push(...newPoints);
+      photoPoints.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+
+      renderResults();
+
+      if (photoPoints.length > 0) {
+        downloadJSON();
       }
-
-      renderTimeline();
     }
 
-    function addManualItem(type) {
-      const now = new Date();
-      const isoNow = now.toISOString().substring(0, 16);
-      if (type === 'visit') {
-        timelineData.push({
-          type: 'visit',
-          startTime: `${isoNow}:00.000+08:00`,
-          endTime: `${isoNow}:00.000+08:00`,
-          lat: '25.002193',
-          lng: '121.615984',
-          placeName: '自訂地點'
-        });
-      } else {
-        timelineData.push({
-          type: 'activity',
-          startTime: `${isoNow}:00.000+08:00`,
-          endTime: `${isoNow}:00.000+08:00`,
-          startLat: '25.002193',
-          startLng: '121.615984',
-          endLat: '25.010228',
-          endLng: '121.625489',
-          activityType: 'motorcycling'
-        });
-      }
-      renderTimeline();
+    function removePoint(index) {
+      photoPoints.splice(index, 1);
+      renderResults();
     }
 
-    function removeItem(index) {
-      timelineData.splice(index, 1);
-      renderTimeline();
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
     }
 
-    function renderTimeline() {
-      const listContainer = document.getElementById('timelineList');
-      listContainer.innerHTML = '';
-      markersGroup.clearLayers();
+    function formatDisplayTime(iso) {
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return iso;
+      return d.toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
 
-      let latLngs = [];
+    // ---------- 畫面渲染(地點清單 + 地圖) ----------
+    function renderResults() {
+      const box = document.getElementById('resultsBox');
+      box.style.display = photoPoints.length > 0 ? 'block' : 'none';
 
-      timelineData.forEach((item, index) => {
-        const div = document.createElement('div');
-        div.className = `timeline-item ${item.type}`;
-        
-        if (item.type === 'visit') {
-          div.innerHTML = `
-            <button class="btn-delete" onclick="removeItem(${index})">✕</button>
-            <div class="item-header"><span class="type-visit">📍 地點停留 (Visit)</span></div>
-            <div class="form-group"><label>開始時間</label><input type="text" value="${item.startTime}" onchange="timelineData[${index}].startTime=this.value; updatePreview();"></div>
-            <div class="form-group"><label>結束時間</label><input type="text" value="${item.endTime}" onchange="timelineData[${index}].endTime=this.value; updatePreview();"></div>
-            <div class="form-group"><label>經緯度</label><input type="text" value="${item.lat}, ${item.lng}" onchange="updateCoords(${index}, this.value); updatePreview();"></div>
-          `;
-          const marker = L.marker([item.lat, item.lng]).bindPopup(`停留點: ${item.lat}, ${item.lng}`);
+      const summary = document.getElementById('resultsSummary');
+      let text = `✅ 已辨識出 ${photoPoints.length} 個地點`;
+      if (skippedCount > 0) text += `(有 ${skippedCount} 張照片沒有 GPS 資訊,已略過)`;
+      summary.textContent = text;
+
+      const listEl = document.getElementById('pointList');
+      listEl.innerHTML = photoPoints.map((p, i) => `
+        <div class="point-card">
+          <div class="point-icon">📍</div>
+          <div class="point-info">
+            <div class="point-name">${escapeHtml(p.placeName)}</div>
+            <div class="point-meta">${formatDisplayTime(p.startTime)} · ${p.lat}, ${p.lng}</div>
+          </div>
+          <button class="btn-delete" title="移除這個地點" onclick="removePoint(${i})">✕</button>
+        </div>
+      `).join('');
+
+      if (mapReady) {
+        markersGroup.clearLayers();
+        const latLngs = [];
+        photoPoints.forEach((p, i) => {
+          const marker = L.marker([p.lat, p.lng]).bindPopup(`${escapeHtml(p.placeName)}<br>${formatDisplayTime(p.startTime)}`);
           markersGroup.addLayer(marker);
-          latLngs.push([item.lat, item.lng]);
-
-        } else {
-          div.innerHTML = `
-            <button class="btn-delete" onclick="removeItem(${index})">✕</button>
-            <div class="item-header"><span class="type-activity">🏍️ 移動行程 (Activity)</span></div>
-            <div class="form-group"><label>開始時間</label><input type="text" value="${item.startTime}" onchange="timelineData[${index}].startTime=this.value; updatePreview();"></div>
-            <div class="form-group"><label>結束時間</label><input type="text" value="${item.endTime}" onchange="timelineData[${index}].endTime=this.value; updatePreview();"></div>
-            <div class="form-group">
-              <label>交通方式</label>
-              <select onchange="timelineData[${index}].activityType=this.value; updatePreview();">
-                <option value="motorcycling" ${item.activityType === 'motorcycling' ? 'selected' : ''}>機車 (Motorcycling)</option>
-                <option value="walking" ${item.activityType === 'walking' ? 'selected' : ''}>步行 (Walking)</option>
-                <option value="passenger_vehicle" ${item.activityType === 'passenger_vehicle' ? 'selected' : ''}>汽車 (Drive)</option>
-                <option value="cycling" ${item.activityType === 'cycling' ? 'selected' : ''}>單車 (Cycling)</option>
-              </select>
-            </div>
-          `;
-          const polyline = L.polyline([[item.startLat, item.startLng], [item.endLat, item.endLng]], {color: 'orange'}).addTo(markersGroup);
-        }
-
-        listContainer.appendChild(div);
-      });
-
-      if (latLngs.length > 0) {
-        map.fitBounds(L.latLngBounds(latLngs));
+          latLngs.push([p.lat, p.lng]);
+          if (i < photoPoints.length - 1) {
+            const next = photoPoints[i + 1];
+            L.polyline([[p.lat, p.lng], [next.lat, next.lng]], { color: '#ff9800', dashArray: '4 6' }).addTo(markersGroup);
+          }
+        });
+        if (latLngs.length > 0) map.fitBounds(L.latLngBounds(latLngs), { padding: [20, 20] });
       }
 
-      const cta = document.getElementById('downloadCta');
-      const ctaText = document.getElementById('downloadCtaText');
-      if (timelineData.length > 0) {
-        cta.classList.add('show');
-        ctaText.textContent = `✅ 已產生 ${timelineData.length} 筆時間軸紀錄,可下載 JSON`;
-      } else {
-        cta.classList.remove('show');
-      }
-
+      document.getElementById('continueBtn').disabled = photoPoints.length === 0;
       updatePreview();
     }
 
+    // ---------- Google Timeline JSON 產生 ----------
     // Haversine 公式計算兩點間距離(公尺),用於 activity.distanceMeters
     function haversineMeters(lat1, lng1, lat2, lng2) {
       const R = 6371000;
@@ -496,53 +630,51 @@
       return sign * (parseInt(match[2], 10) * 60 + parseInt(match[3], 10));
     }
 
-    function updateCoords(index, val) {
-      const parts = val.split(',');
-      if (parts.length === 2) {
-        timelineData[index].lat = parts[0].trim();
-        timelineData[index].lng = parts[1].trim();
-      }
+    function visitSegment(p) {
+      return {
+        startTime: p.startTime,
+        endTime: p.endTime,
+        startTimeTimezoneUtcOffsetMinutes: getUtcOffsetMinutes(p.startTime),
+        endTimeTimezoneUtcOffsetMinutes: getUtcOffsetMinutes(p.endTime),
+        visit: {
+          hierarchyLevel: 0,
+          probability: 0.9,
+          topCandidate: {
+            placeId: "CustomPlaceID",
+            semanticType: "Unknown",
+            probability: 0.85,
+            placeLocation: `geo:${p.lat},${p.lng}`
+          }
+        }
+      };
+    }
+
+    // 兩個地點之間自動補上的移動路段
+    function activitySegment(from, to) {
+      return {
+        startTime: from.endTime,
+        endTime: to.startTime,
+        startTimeTimezoneUtcOffsetMinutes: getUtcOffsetMinutes(from.endTime),
+        endTimeTimezoneUtcOffsetMinutes: getUtcOffsetMinutes(to.startTime),
+        activity: {
+          start: `geo:${from.lat},${from.lng}`,
+          end: `geo:${to.lat},${to.lng}`,
+          distanceMeters: Math.round(haversineMeters(
+            parseFloat(from.lat), parseFloat(from.lng),
+            parseFloat(to.lat), parseFloat(to.lng)
+          )),
+          probability: 0.85,
+          topCandidate: { type: 'motorcycling', probability: 0.8 }
+        }
+      };
     }
 
     function generateGoogleJSON() {
-      const semanticSegments = timelineData.map(item => {
-        const base = {
-          startTime: item.startTime,
-          endTime: item.endTime,
-          startTimeTimezoneUtcOffsetMinutes: getUtcOffsetMinutes(item.startTime),
-          endTimeTimezoneUtcOffsetMinutes: getUtcOffsetMinutes(item.endTime)
-        };
-        if (item.type === 'visit') {
-          return {
-            ...base,
-            visit: {
-              hierarchyLevel: 0,
-              probability: 0.9,
-              topCandidate: {
-                placeId: "CustomPlaceID",
-                semanticType: "Unknown",
-                probability: 0.85,
-                placeLocation: `geo:${item.lat},${item.lng}`
-              }
-            }
-          };
-        } else {
-          return {
-            ...base,
-            activity: {
-              start: `geo:${item.startLat},${item.startLng}`,
-              end: `geo:${item.endLat},${item.endLng}`,
-              distanceMeters: Math.round(haversineMeters(
-                parseFloat(item.startLat), parseFloat(item.startLng),
-                parseFloat(item.endLat), parseFloat(item.endLng)
-              )),
-              probability: 0.85,
-              topCandidate: {
-                type: item.activityType,
-                probability: 0.8
-              }
-            }
-          };
+      const semanticSegments = [];
+      photoPoints.forEach((p, i) => {
+        semanticSegments.push(visitSegment(p));
+        if (i < photoPoints.length - 1) {
+          semanticSegments.push(activitySegment(p, photoPoints[i + 1]));
         }
       });
       return { semanticSegments };
@@ -553,14 +685,25 @@
       document.getElementById('jsonCode').textContent = JSON.stringify(json, null, 2);
     }
 
-    function exportJSON() {
+    function todayStr() {
+      return new Date().toISOString().slice(0, 10);
+    }
+
+    function downloadJSON() {
       const json = generateGoogleJSON();
+      const filename = `${todayStr()}.json`;
       const blob = new Blob([JSON.stringify(json, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `timeline_export_${new Date().toISOString().slice(0,10)}.json`;
+      a.download = filename;
       a.click();
+      URL.revokeObjectURL(url);
+
+      const banner = document.getElementById('downloadBanner');
+      banner.classList.add('show');
+      banner.innerHTML = `✅ 已自動下載 <strong>${filename}</strong> 到你的「下載」資料夾,下一步會用到它。<br>沒有跳出下載視窗?<button class="btn-link-inline" onclick="downloadJSON()">點此手動下載</button>`;
+      document.getElementById('guideFilename').textContent = filename;
     }
   </script>
 </body>
