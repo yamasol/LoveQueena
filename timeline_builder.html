@@ -169,6 +169,74 @@
       font-size: 0.8rem;
       color: #00ff66;
     }
+    .header-btns {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+    .header-btns button, .btn-link {
+      margin-left: 0;
+    }
+    .btn-link {
+      display: inline-block;
+      background: transparent;
+      color: var(--accent-color);
+      border: 1px solid var(--accent-color);
+      padding: 8px 16px;
+      border-radius: 4px;
+      font-weight: bold;
+      text-decoration: none;
+      font-size: 0.85rem;
+    }
+    .upload-hint {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+    .download-cta {
+      display: none;
+      margin: 0 15px 15px 15px;
+      padding: 12px;
+      background: rgba(76, 175, 80, 0.1);
+      border: 1px solid var(--visit-color);
+      border-radius: 8px;
+      text-align: center;
+    }
+    .download-cta.show { display: block; }
+    .download-cta p {
+      margin: 0 0 8px 0;
+      color: var(--visit-color);
+      font-size: 0.85rem;
+      font-weight: bold;
+    }
+    .btn-download {
+      width: 100%;
+      background: var(--visit-color);
+      color: #fff;
+      border: none;
+      padding: 10px;
+      border-radius: 4px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 768px) {
+      body { height: auto; min-height: 100vh; overflow: auto; }
+      header { flex-wrap: wrap; padding: 10px 12px; }
+      header h1 { font-size: 1rem; width: 100%; }
+      .header-btns { width: 100%; }
+      .header-btns button, .btn-link { flex: 1; text-align: center; padding: 10px 6px; font-size: 0.8rem; }
+      .main-container { flex-direction: column; height: auto; overflow: visible; }
+      .panel-left { width: 100%; border-right: none; border-bottom: 1px solid var(--border-color); }
+      .panel-right { min-height: 70vh; }
+      #map { height: 40vh; flex: none; }
+      .timeline-list { max-height: 50vh; }
+      .json-preview { height: 140px; }
+      .form-group label { width: 60px; font-size: 0.75rem; }
+      .controls { flex-direction: column; }
+    }
   </style>
 </head>
 <body>
@@ -177,6 +245,7 @@
     <h1>Google 時間軸 (Timeline) 復原生成器</h1>
     <div class="header-btns">
       <button onclick="exportJSON()">匯出 Google Timeline JSON</button>
+      <a class="btn-link" href="https://ahn-lab.org/google-timeline-visualizer/" target="_blank" rel="noopener noreferrer">🌐 用 Timeline Visualizer 檢視</a>
     </div>
   </header>
 
@@ -185,12 +254,18 @@
       <div class="drop-area" onclick="document.getElementById('fileInput').click()">
         <div><strong>批次拖入 iPhone 照片 (JPG / HEIC)</strong></div>
         <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">自動讀取照片 EXIF 中的 GPS 與時間</div>
+        <div class="upload-hint">單次最多上傳 <span id="maxPhotosLabel"></span> 張,建議 20 張左右最穩定</div>
         <input type="file" id="fileInput" multiple accept="image/*,.heic" style="display:none">
       </div>
 
       <div class="controls">
         <button class="btn-secondary" onclick="addManualItem('visit')">+ 手動新增停留 (Visit)</button>
         <button class="btn-secondary" onclick="addManualItem('activity')">+ 手動新增移動 (Activity)</button>
+      </div>
+
+      <div class="download-cta" id="downloadCta">
+        <p id="downloadCtaText">✅ 已產生時間軸紀錄</p>
+        <button class="btn-download" onclick="exportJSON()">⬇ 下載 Google Timeline JSON</button>
       </div>
 
       <div class="timeline-list" id="timelineList">
@@ -209,6 +284,7 @@
   <script>
     let timelineData = [];
     let map, markersGroup;
+    const MAX_PHOTOS = 30;
 
     // 初始化 Leaflet 地圖
     window.onload = function() {
@@ -218,12 +294,18 @@
       }).addTo(map);
       markersGroup = L.layerGroup().addTo(map);
 
+      document.getElementById('maxPhotosLabel').textContent = MAX_PHOTOS;
       document.getElementById('fileInput').addEventListener('change', handlePhotos);
     };
 
     // 處理上傳照片
     async function handlePhotos(e) {
-      const files = Array.from(e.target.files);
+      let files = Array.from(e.target.files);
+      if (files.length > MAX_PHOTOS) {
+        alert(`一次最多可上傳 ${MAX_PHOTOS} 張照片(建議 20 張左右最穩定)。您選擇了 ${files.length} 張,僅會處理前 ${MAX_PHOTOS} 張。`);
+        files = files.slice(0, MAX_PHOTOS);
+      }
+      e.target.value = '';
       let newItems = [];
 
       for (let file of files) {
@@ -360,7 +442,36 @@
         map.fitBounds(L.latLngBounds(latLngs));
       }
 
+      const cta = document.getElementById('downloadCta');
+      const ctaText = document.getElementById('downloadCtaText');
+      if (timelineData.length > 0) {
+        cta.classList.add('show');
+        ctaText.textContent = `✅ 已產生 ${timelineData.length} 筆時間軸紀錄,可下載 JSON`;
+      } else {
+        cta.classList.remove('show');
+      }
+
       updatePreview();
+    }
+
+    // Haversine 公式計算兩點間距離(公尺),用於 activity.distanceMeters
+    function haversineMeters(lat1, lng1, lat2, lng2) {
+      const R = 6371000;
+      const toRad = deg => deg * Math.PI / 180;
+      const dLat = toRad(lat2 - lat1);
+      const dLng = toRad(lng2 - lng1);
+      const a = Math.sin(dLat / 2) ** 2 +
+                Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    // 從 ISO 時間字串解析 UTC 偏移分鐘數(Google Timeline 官方格式所需欄位)
+    function getUtcOffsetMinutes(isoString) {
+      if (/z$/i.test(isoString)) return 0;
+      const match = /([+-])(\d{2}):?(\d{2})$/.exec(isoString);
+      if (!match) return 0;
+      const sign = match[1] === '-' ? -1 : 1;
+      return sign * (parseInt(match[2], 10) * 60 + parseInt(match[3], 10));
     }
 
     function updateCoords(index, val) {
@@ -372,39 +483,47 @@
     }
 
     function generateGoogleJSON() {
-      return timelineData.map(item => {
+      const semanticSegments = timelineData.map(item => {
+        const base = {
+          startTime: item.startTime,
+          endTime: item.endTime,
+          startTimeTimezoneUtcOffsetMinutes: getUtcOffsetMinutes(item.startTime),
+          endTimeTimezoneUtcOffsetMinutes: getUtcOffsetMinutes(item.endTime)
+        };
         if (item.type === 'visit') {
           return {
-            startTime: item.startTime,
-            endTime: item.endTime,
+            ...base,
             visit: {
-              hierarchyLevel: "0",
+              hierarchyLevel: 0,
+              probability: 0.9,
               topCandidate: {
-                probability: "0.850000",
+                placeId: "CustomPlaceID",
                 semanticType: "Unknown",
-                placeID: "Custom_Place_ID",
+                probability: 0.85,
                 placeLocation: `geo:${item.lat},${item.lng}`
-              },
-              probability: "0.900000"
+              }
             }
           };
         } else {
           return {
-            startTime: item.startTime,
-            endTime: item.endTime,
+            ...base,
             activity: {
-              probability: "0.850000",
               start: `geo:${item.startLat},${item.startLng}`,
               end: `geo:${item.endLat},${item.endLng}`,
+              distanceMeters: Math.round(haversineMeters(
+                parseFloat(item.startLat), parseFloat(item.startLng),
+                parseFloat(item.endLat), parseFloat(item.endLng)
+              )),
+              probability: 0.85,
               topCandidate: {
                 type: item.activityType,
-                probability: "0.800000"
-              },
-              distanceMeters: "5000.0"
+                probability: 0.8
+              }
             }
           };
         }
       });
+      return { semanticSegments };
     }
 
     function updatePreview() {
