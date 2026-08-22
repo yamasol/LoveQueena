@@ -1,3 +1,5 @@
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>過曝指數測驗</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
@@ -415,8 +417,28 @@
     .card{ padding:28px 22px; }
     .result-head{ flex-direction:column; align-items:flex-start; }
   }
+  @media (max-width:380px){
+    .app-shell{ padding:28px 14px 48px; }
+    .card{ padding:22px 16px; border-radius:22px; }
+    .btn{ padding:13px 18px; font-size:14.5px; }
+    .btn-row{ flex-wrap:wrap; }
+    .btn-row .btn-primary{ margin-left:0; flex:1 1 auto; }
+    .btn-row .btn-ghost{ flex:1 1 auto; }
+    .share-row .btn{ flex:1 1 auto; text-align:center; }
+  }
+
+  #bg-canvas{
+    position:fixed;
+    inset:0;
+    width:100%;
+    height:100%;
+    z-index:0;
+    pointer-events:none;
+    display:block;
+  }
 </style>
 
+<canvas id="bg-canvas" aria-hidden="true"></canvas>
 <div class="glow glow-a"></div>
 <div class="glow glow-b"></div>
 <div class="glow glow-c"></div>
@@ -493,6 +515,148 @@
 </div>
 
 <script>
+(function(){
+  // 背景光斑粒子:呼應「過曝／光斑」主題,並隨滑鼠或觸控輕微產生視差互動
+  var canvas = document.getElementById("bg-canvas");
+  if(!canvas || !canvas.getContext) return;
+  var ctx = canvas.getContext("2d");
+  var reduceMotionQuery = window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
+  var reduceMotion = reduceMotionQuery ? reduceMotionQuery.matches : false;
+
+  var COLOR_VARS = ["--lv1-rgb","--lv2-rgb","--lv3-rgb","--accent-rgb","--accent2-rgb"];
+  var colors = [];
+  function readColors(){
+    var styles = getComputedStyle(document.documentElement);
+    colors = COLOR_VARS.map(function(name){ return styles.getPropertyValue(name).trim() || "255 255 255"; });
+  }
+  readColors();
+
+  var W = 0, H = 0, DPR = Math.min(window.devicePixelRatio || 1, 2);
+  var particles = [];
+  var pointer = { x:0.5, y:0.5, targetX:0.5, targetY:0.5 };
+  var rafId = null;
+  var visible = !document.hidden;
+
+  function particleCount(){
+    var area = window.innerWidth * window.innerHeight;
+    return Math.max(14, Math.min(42, Math.round(area / 26000)));
+  }
+
+  function makeParticle(){
+    return {
+      x: Math.random(),
+      y: Math.random(),
+      r: 10 + Math.random() * 34,
+      baseAlpha: 0.06 + Math.random() * 0.16,
+      speed: 0.00006 + Math.random() * 0.00014,
+      drift: (Math.random() - 0.5) * 0.00035,
+      phase: Math.random() * Math.PI * 2,
+      color: colors[Math.floor(Math.random() * colors.length)]
+    };
+  }
+
+  function resize(){
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width = Math.round(W * DPR);
+    canvas.height = Math.round(H * DPR);
+    canvas.style.width = W + "px";
+    canvas.style.height = H + "px";
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    var target = particleCount();
+    if(particles.length < target){
+      while(particles.length < target) particles.push(makeParticle());
+    } else {
+      particles.length = target;
+    }
+  }
+
+  function drawStatic(){
+    ctx.clearRect(0, 0, W, H);
+    particles.forEach(function(p){
+      var x = p.x * W, y = p.y * H;
+      drawParticle(x, y, p);
+    });
+  }
+
+  function drawParticle(x, y, p){
+    var parallaxX = (pointer.x - 0.5) * 26;
+    var parallaxY = (pointer.y - 0.5) * 26;
+    var grad = ctx.createRadialGradient(x + parallaxX, y + parallaxY, 0, x + parallaxX, y + parallaxY, p.r);
+    grad.addColorStop(0, "rgb(" + p.color + " / " + p.baseAlpha + ")");
+    grad.addColorStop(1, "rgb(" + p.color + " / 0)");
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(x + parallaxX, y + parallaxY, p.r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  var last = 0;
+  function frame(ts){
+    if(!visible){ rafId = null; return; }
+    var dt = last ? ts - last : 16;
+    last = ts;
+    pointer.x += (pointer.targetX - pointer.x) * 0.04;
+    pointer.y += (pointer.targetY - pointer.y) * 0.04;
+
+    ctx.clearRect(0, 0, W, H);
+    particles.forEach(function(p){
+      p.y -= p.speed * dt;
+      p.x += Math.sin(p.phase + p.y * 8) * p.drift;
+      if(p.y < -0.1){ p.y = 1.1; p.x = Math.random(); }
+      if(p.x < -0.1) p.x = 1.1;
+      if(p.x > 1.1) p.x = -0.1;
+      drawParticle(p.x * W, p.y * H, p);
+    });
+    rafId = requestAnimationFrame(frame);
+  }
+
+  function start(){
+    if(rafId === null && visible && !reduceMotion) rafId = requestAnimationFrame(frame);
+  }
+
+  function updatePointer(nx, ny){
+    pointer.targetX = nx;
+    pointer.targetY = ny;
+  }
+
+  window.addEventListener("resize", resize);
+  window.addEventListener("mousemove", function(e){
+    updatePointer(e.clientX / window.innerWidth, e.clientY / window.innerHeight);
+  }, { passive:true });
+  window.addEventListener("touchmove", function(e){
+    if(!e.touches || !e.touches.length) return;
+    updatePointer(e.touches[0].clientX / window.innerWidth, e.touches[0].clientY / window.innerHeight);
+  }, { passive:true });
+  window.addEventListener("deviceorientation", function(e){
+    if(e.gamma === null || e.beta === null) return;
+    var nx = Math.min(1, Math.max(0, 0.5 + e.gamma / 60));
+    var ny = Math.min(1, Math.max(0, 0.5 + (e.beta - 45) / 90));
+    updatePointer(nx, ny);
+  }, { passive:true });
+  document.addEventListener("visibilitychange", function(){
+    visible = !document.hidden;
+    last = 0;
+    if(visible) start(); else if(rafId){ cancelAnimationFrame(rafId); rafId = null; }
+  });
+  if(reduceMotionQuery && reduceMotionQuery.addEventListener){
+    reduceMotionQuery.addEventListener("change", function(e){
+      reduceMotion = e.matches;
+      if(reduceMotion){ if(rafId){ cancelAnimationFrame(rafId); rafId = null; } drawStatic(); }
+      else start();
+    });
+  }
+  if(window.matchMedia){
+    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function(){
+      readColors();
+      particles.forEach(function(p){ p.color = colors[Math.floor(Math.random() * colors.length)]; });
+    });
+  }
+
+  resize();
+  if(reduceMotion) drawStatic(); else start();
+})();
+
 (function(){
   var QUESTIONS = [
     "發布動態或貼文後，我會忍不住每隔幾分鐘查看按讚數或留言。",
@@ -816,6 +980,18 @@
   var btnDownload = document.getElementById("btn-download");
   var downloadStatus = document.getElementById("download-status");
 
+  function saveViaAnchor(blob, filename){
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+    return { status:"saved" };
+  }
+
   btnDownload.addEventListener("click", function(){
     if(!currentResult) return;
     var originalLabel = btnDownload.textContent;
@@ -830,18 +1006,14 @@
         }, "image/png");
       });
     }).then(function(blob){
-      if(!window.claude || !window.claude.use){
-        downloadStatus.textContent = "此環境暫不支援下載，建議改用截圖保存。";
-        return null;
+      var filename = "過曝指數-" + currentResult.level.name + ".png";
+      if(window.claude && window.claude.use){
+        return window.claude.use("downloads").then(function(downloads){
+          if(!downloads) return saveViaAnchor(blob, filename);
+          return downloads.save({ filename: filename, data: blob });
+        });
       }
-      return window.claude.use("downloads").then(function(downloads){
-        if(!downloads){
-          downloadStatus.textContent = "此環境暫不支援下載，建議改用截圖保存。";
-          return null;
-        }
-        var filename = "過曝指數-" + currentResult.level.name + ".png";
-        return downloads.save({ filename: filename, data: blob });
-      });
+      return saveViaAnchor(blob, filename);
     }).then(function(result){
       if(result && result.status === "saved"){
         downloadStatus.textContent = "卡片已儲存！";
