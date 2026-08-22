@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Google 地圖時間軸 (Timeline) 復原與產生工具</title>
   <!-- ExifReader CDN: 支援 HEIC/JPG 照片 EXIF 解析 -->
-  <script src="https://cdn.jsdelivr.net/npm/exifreader@4.21.1/dist/exif-reader.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/exifreader@4.44.0/dist/exif-reader.min.js"></script>
   <!-- Leaflet CSS & JS: 免費開源互動式地圖 -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -254,7 +254,8 @@
       <div class="drop-area" onclick="document.getElementById('fileInput').click()">
         <div><strong>批次拖入 iPhone 照片 (JPG / HEIC)</strong></div>
         <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">自動讀取照片 EXIF 中的 GPS 與時間</div>
-        <div class="upload-hint">單次最多上傳 <span id="maxPhotosLabel"></span> 張,建議 20 張左右最穩定</div>
+        <div class="upload-hint">單次最多上傳 <span id="maxPhotosLabel"></span> 張(已優化為平行讀取,速度更快)</div>
+        <div class="upload-hint" id="uploadStatus" style="display:none; color:var(--accent-color); font-weight:600;"></div>
         <input type="file" id="fileInput" multiple accept="image/*,.heic" style="display:none">
       </div>
 
@@ -284,7 +285,7 @@
   <script>
     let timelineData = [];
     let map, markersGroup;
-    const MAX_PHOTOS = 30;
+    const MAX_PHOTOS = 60;
 
     // 初始化 Leaflet 地圖
     window.onload = function() {
@@ -298,46 +299,67 @@
       document.getElementById('fileInput').addEventListener('change', handlePhotos);
     };
 
-    // 處理上傳照片
+    // 讀取單張照片的 EXIF GPS/時間;length:'auto' 只讀取包含 metadata 的檔案片段,不必載入整張照片
+    // (依官方文件,length:'auto' 必須搭配 expanded + includeOffsets 使用;excludeTags.mpf 可避開內嵌預覽圖拖慢讀取)
+    async function readPhotoItem(file) {
+      try {
+        const tags = await ExifReader.load(file, {
+          length: 'auto',
+          expanded: true,
+          includeOffsets: true,
+          excludeTags: { mpf: true }
+        });
+        const gps = tags.gps;
+        if (gps && typeof gps.Latitude === 'number' && typeof gps.Longitude === 'number') {
+          let timeStr = new Date().toISOString();
+          const dateTimeOriginal = tags.exif && tags.exif.DateTimeOriginal;
+
+          if (dateTimeOriginal) {
+            // 解析 EXIF 時間 格式: YYYY:MM:DD HH:MM:SS
+            const parts = dateTimeOriginal.description.split(' ');
+            const d = parts[0].replace(/:/g, '-');
+            timeStr = `${d}T${parts[1]}+08:00`;
+          }
+
+          return {
+            type: 'visit',
+            startTime: timeStr,
+            endTime: timeStr,
+            lat: gps.Latitude.toFixed(6),
+            lng: gps.Longitude.toFixed(6),
+            placeName: file.name
+          };
+        }
+      } catch (err) {
+        console.error("無法讀取 EXIF:", file.name, err);
+      }
+      return null;
+    }
+
+    // 處理上傳照片:平行讀取每張照片的 EXIF,大幅縮短多張照片的等待時間
     async function handlePhotos(e) {
       let files = Array.from(e.target.files);
       if (files.length > MAX_PHOTOS) {
-        alert(`一次最多可上傳 ${MAX_PHOTOS} 張照片(建議 20 張左右最穩定)。您選擇了 ${files.length} 張,僅會處理前 ${MAX_PHOTOS} 張。`);
+        alert(`一次最多可上傳 ${MAX_PHOTOS} 張照片。您選擇了 ${files.length} 張,僅會處理前 ${MAX_PHOTOS} 張。`);
         files = files.slice(0, MAX_PHOTOS);
       }
       e.target.value = '';
-      let newItems = [];
 
-      for (let file of files) {
-        try {
-          const tags = await ExifReader.load(file);
-          if (tags.GPSLatitude && tags.GPSLongitude) {
-            const lat = tags.GPSLatitude.description;
-            const lng = tags.GPSLongitude.description;
-            let timeStr = new Date().toISOString();
+      const statusEl = document.getElementById('uploadStatus');
+      let done = 0;
+      statusEl.style.display = 'block';
+      statusEl.textContent = `解析中… 0 / ${files.length}`;
 
-            if (tags.DateTimeOriginal) {
-              // 解析 EXIF 時間 格式: YYYY:MM:DD HH:MM:SS
-              const parts = tags.DateTimeOriginal.description.split(' ');
-              const d = parts[0].replace(/:/g, '-');
-              timeStr = `${d}T${parts[1]}+08:00`;
-            }
+      const results = await Promise.all(files.map(file => readPhotoItem(file).then(item => {
+        done++;
+        statusEl.textContent = `解析中… ${done} / ${files.length}`;
+        return item;
+      })));
 
-            newItems.push({
-              type: 'visit',
-              startTime: timeStr,
-              endTime: timeStr,
-              lat: parseFloat(lat).toFixed(6),
-              lng: parseFloat(lng).toFixed(6),
-              placeName: file.name
-            });
-          }
-        } catch (err) {
-          console.error("無法讀取 EXIF:", file.name, err);
-        }
-      }
+      statusEl.style.display = 'none';
+      let newItems = results.filter(Boolean);
 
-      // 按時間排序
+      // 按時間排序(平行處理後順序可能被打亂,排序後才補上移動軌跡)
       newItems.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
       
       // 自動推算前後移動軌跡
