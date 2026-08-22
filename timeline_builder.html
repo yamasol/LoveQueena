@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Google 地圖時間軸 (Timeline) 復原與產生工具</title>
+  <!-- ExifReader CDN: 支援 HEIC/JPG 照片 EXIF 解析 -->
+  <script src="https://cdn.jsdelivr.net/npm/exifreader@4.21.1/dist/exif-reader.min.js"></script>
+  <!-- Leaflet CSS & JS: 免費開源互動式地圖 -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    :root {
+      --bg-color: #121212;
+      --card-bg: #1e1e1e;
+      --border-color: #333;
+      --accent-color: #4da6ff;
+      --text-color: #e0e0e0;
+      --text-muted: #aaa;
+      --visit-color: #4caf50;
+      --activity-color: #ff9800;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+    header {
+      background: #181818;
+      border-bottom: 1px solid var(--border-color);
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.2rem;
+      color: var(--accent-color);
+    }
+    .header-btns button {
+      background: var(--accent-color);
+      color: #000;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-left: 8px;
+    }
+    .main-container {
+      display: flex;
+      flex: 1;
+      height: calc(100vh - 57px);
+      overflow: hidden;
+    }
+    .panel-left {
+      width: 420px;
+      background: var(--card-bg);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+    }
+    .panel-right {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    #map {
+      flex: 1;
+      background: #222;
+    }
+    .drop-area {
+      margin: 15px;
+      padding: 20px;
+      border: 2px dashed var(--accent-color);
+      border-radius: 8px;
+      text-align: center;
+      background: rgba(77, 166, 255, 0.05);
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .drop-area:hover {
+      background: rgba(77, 166, 255, 0.15);
+    }
+    .timeline-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 15px 15px 15px;
+    }
+    .timeline-item {
+      background: #282828;
+      border-radius: 6px;
+      padding: 12px;
+      margin-bottom: 12px;
+      border-left: 4px solid #888;
+      position: relative;
+    }
+    .timeline-item.visit { border-left-color: var(--visit-color); }
+    .timeline-item.activity { border-left-color: var(--activity-color); }
+    
+    .item-header {
+      display: flex;
+      justify-content: space-between;
+      font-weight: bold;
+      margin-bottom: 8px;
+      font-size: 0.9rem;
+    }
+    .type-visit { color: var(--visit-color); }
+    .type-activity { color: var(--activity-color); }
+    
+    .form-group {
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+    }
+    .form-group label {
+      width: 70px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    .form-group input, .form-group select {
+      flex: 1;
+      background: #181818;
+      border: 1px solid var(--border-color);
+      color: var(--text-color);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.85rem;
+    }
+    .btn-delete {
+      position: absolute;
+      right: 10px;
+      top: 10px;
+      background: none;
+      border: none;
+      color: #ff5252;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .controls {
+      padding: 10px 15px;
+      display: flex;
+      gap: 10px;
+    }
+    .btn-secondary {
+      flex: 1;
+      background: #333;
+      color: #fff;
+      border: 1px solid #555;
+      padding: 8px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .json-preview {
+      height: 200px;
+      background: #151515;
+      border-top: 1px solid var(--border-color);
+      padding: 10px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 0.8rem;
+      color: #00ff66;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Google 時間軸 (Timeline) 復原生成器</h1>
+    <div class="header-btns">
+      <button onclick="exportJSON()">匯出 Google Timeline JSON</button>
+    </div>
+  </header>
+
+  <div class="main-container">
+    <div class="panel-left">
+      <div class="drop-area" onclick="document.getElementById('fileInput').click()">
+        <div><strong>批次拖入 iPhone 照片 (JPG / HEIC)</strong></div>
+        <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">自動讀取照片 EXIF 中的 GPS 與時間</div>
+        <input type="file" id="fileInput" multiple accept="image/*,.heic" style="display:none">
+      </div>
+
+      <div class="controls">
+        <button class="btn-secondary" onclick="addManualItem('visit')">+ 手動新增停留 (Visit)</button>
+        <button class="btn-secondary" onclick="addManualItem('activity')">+ 手動新增移動 (Activity)</button>
+      </div>
+
+      <div class="timeline-list" id="timelineList">
+        <!-- 時間軸項目 -->
+      </div>
+    </div>
+
+    <div class="panel-right">
+      <div id="map"></div>
+      <div class="json-preview">
+        <pre id="jsonCode">// 即時輸出的 Google Timeline 格式 JSON 將顯示於此...</pre>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let timelineData = [];
+    let map, markersGroup;
+
+    // 初始化 Leaflet 地圖
+    window.onload = function() {
+      map = L.map('map').setView([25.01, 121.60], 12);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(map);
+      markersGroup = L.layerGroup().addTo(map);
+
+      document.getElementById('fileInput').addEventListener('change', handlePhotos);
+    };
+
+    // 處理上傳照片
+    async function handlePhotos(e) {
+      const files = Array.from(e.target.files);
+      let newItems = [];
+
+      for (let file of files) {
+        try {
+          const tags = await ExifReader.load(file);
+          if (tags.GPSLatitude && tags.GPSLongitude) {
+            const lat = tags.GPSLatitude.description;
+            const lng = tags.GPSLongitude.description;
+            let timeStr = new Date().toISOString();
+
+            if (tags.DateTimeOriginal) {
+              // 解析 EXIF 時間 格式: YYYY:MM:DD HH:MM:SS
+              const parts = tags.DateTimeOriginal.description.split(' ');
+              const d = parts[0].replace(/:/g, '-');
+              timeStr = `${d}T${parts[1]}+08:00`;
+            }
+
+            newItems.push({
+              type: 'visit',
+              startTime: timeStr,
+              endTime: timeStr,
+              lat: parseFloat(lat).toFixed(6),
+              lng: parseFloat(lng).toFixed(6),
+              placeName: file.name
+            });
+          }
+        } catch (err) {
+          console.error("無法讀取 EXIF:", file.name, err);
+        }
+      }
+
+      // 按時間排序
+      newItems.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+      
+      // 自動推算前後移動軌跡
+      for (let i = 0; i < newItems.length; i++) {
+        timelineData.push(newItems[i]);
+        if (i < newItems.length - 1) {
+          // 自動補上點與點之間的移動 Segment
+          timelineData.push({
+            type: 'activity',
+            startTime: newItems[i].endTime,
+            endTime: newItems[i+1].startTime,
+            startLat: newItems[i].lat,
+            startLng: newItems[i].lng,
+            endLat: newItems[i+1].lat,
+            endLng: newItems[i+1].lng,
+            activityType: 'motorcycling'
+          });
+        }
+      }
+
+      renderTimeline();
+    }
+
+    function addManualItem(type) {
+      const now = new Date();
+      const isoNow = now.toISOString().substring(0, 16);
+      if (type === 'visit') {
+        timelineData.push({
+          type: 'visit',
+          startTime: `${isoNow}:00.000+08:00`,
+          endTime: `${isoNow}:00.000+08:00`,
+          lat: '25.002193',
+          lng: '121.615984',
+          placeName: '自訂地點'
+        });
+      } else {
+        timelineData.push({
+          type: 'activity',
+          startTime: `${isoNow}:00.000+08:00`,
+          endTime: `${isoNow}:00.000+08:00`,
+          startLat: '25.002193',
+          startLng: '121.615984',
+          endLat: '25.010228',
+          endLng: '121.625489',
+          activityType: 'motorcycling'
+        });
+      }
+      renderTimeline();
+    }
+
+    function removeItem(index) {
+      timelineData.splice(index, 1);
+      renderTimeline();
+    }
+
+    function renderTimeline() {
+      const listContainer = document.getElementById('timelineList');
+      listContainer.innerHTML = '';
+      markersGroup.clearLayers();
+
+      let latLngs = [];
+
+      timelineData.forEach((item, index) => {
+        const div = document.createElement('div');
+        div.className = `timeline-item ${item.type}`;
+        
+        if (item.type === 'visit') {
+          div.innerHTML = `
+            <button class="btn-delete" onclick="removeItem(${index})">✕</button>
+            <div class="item-header"><span class="type-visit">📍 地點停留 (Visit)</span></div>
+            <div class="form-group"><label>開始時間</label><input type="text" value="${item.startTime}" onchange="timelineData[${index}].startTime=this.value; updatePreview();"></div>
+            <div class="form-group"><label>結束時間</label><input type="text" value="${item.endTime}" onchange="timelineData[${index}].endTime=this.value; updatePreview();"></div>
+            <div class="form-group"><label>經緯度</label><input type="text" value="${item.lat}, ${item.lng}" onchange="updateCoords(${index}, this.value); updatePreview();"></div>
+          `;
+          const marker = L.marker([item.lat, item.lng]).bindPopup(`停留點: ${item.lat}, ${item.lng}`);
+          markersGroup.addLayer(marker);
+          latLngs.push([item.lat, item.lng]);
+
+        } else {
+          div.innerHTML = `
+            <button class="btn-delete" onclick="removeItem(${index})">✕</button>
+            <div class="item-header"><span class="type-activity">🏍️ 移動行程 (Activity)</span></div>
+            <div class="form-group"><label>開始時間</label><input type="text" value="${item.startTime}" onchange="timelineData[${index}].startTime=this.value; updatePreview();"></div>
+            <div class="form-group"><label>結束時間</label><input type="text" value="${item.endTime}" onchange="timelineData[${index}].endTime=this.value; updatePreview();"></div>
+            <div class="form-group">
+              <label>交通方式</label>
+              <select onchange="timelineData[${index}].activityType=this.value; updatePreview();">
+                <option value="motorcycling" ${item.activityType === 'motorcycling' ? 'selected' : ''}>機車 (Motorcycling)</option>
+                <option value="walking" ${item.activityType === 'walking' ? 'selected' : ''}>步行 (Walking)</option>
+                <option value="passenger_vehicle" ${item.activityType === 'passenger_vehicle' ? 'selected' : ''}>汽車 (Drive)</option>
+                <option value="cycling" ${item.activityType === 'cycling' ? 'selected' : ''}>單車 (Cycling)</option>
+              </select>
+            </div>
+          `;
+          const polyline = L.polyline([[item.startLat, item.startLng], [item.endLat, item.endLng]], {color: 'orange'}).addTo(markersGroup);
+        }
+
+        listContainer.appendChild(div);
+      });
+
+      if (latLngs.length > 0) {
+        map.fitBounds(L.latLngBounds(latLngs));
+      }
+
+      updatePreview();
+    }
+
+    function updateCoords(index, val) {
+      const parts = val.split(',');
+      if (parts.length === 2) {
+        timelineData[index].lat = parts[0].trim();
+        timelineData[index].lng = parts[1].trim();
+      }
+    }
+
+    function generateGoogleJSON() {
+      return timelineData.map(item => {
+        if (item.type === 'visit') {
+          return {
+            startTime: item.startTime,
+            endTime: item.endTime,
+            visit: {
+              hierarchyLevel: "0",
+              topCandidate: {
+                probability: "0.850000",
+                semanticType: "Unknown",
+                placeID: "Custom_Place_ID",
+                placeLocation: `geo:${item.lat},${item.lng}`
+              },
+              probability: "0.900000"
+            }
+          };
+        } else {
+          return {
+            startTime: item.startTime,
+            endTime: item.endTime,
+            activity: {
+              probability: "0.850000",
+              start: `geo:${item.startLat},${item.startLng}`,
+              end: `geo:${item.endLat},${item.endLng}`,
+              topCandidate: {
+                type: item.activityType,
+                probability: "0.800000"
+              },
+              distanceMeters: "5000.0"
+            }
+          };
+        }
+      });
+    }
+
+    function updatePreview() {
+      const json = generateGoogleJSON();
+      document.getElementById('jsonCode').textContent = JSON.stringify(json, null, 2);
+    }
+
+    function exportJSON() {
+      const json = generateGoogleJSON();
+      const blob = new Blob([JSON.stringify(json, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `timeline_export_${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+    }
+  </script>
+</body>
+</html>

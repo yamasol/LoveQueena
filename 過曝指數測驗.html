@@ -1,0 +1,871 @@
+<title>過曝指數測驗</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
+<style>
+  :root{
+    --bg:#fbf6ff;
+    --bg-2:#fff3ea;
+    --surface:#ffffff;
+    --surface-2:#f4eefb;
+    --ink:#2e2440;
+    --ink-soft:#6e6288;
+    --ink-faint:#9c90b8;
+    --line:#e9e1f5;
+    --accent-rgb:255 143 112;
+    --accent2-rgb:139 127 232;
+    --accent2-soft:#edebfb;
+    --shadow:rgba(90,60,130,0.14);
+
+    --lv1-rgb:79 190 140;
+    --lv2-rgb:201 178 55;
+    --lv3-rgb:240 169 62;
+    --lv4-rgb:240 112 62;
+    --lv5-rgb:226 61 122;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#1b1526;
+      --bg-2:#241a30;
+      --surface:#251c34;
+      --surface-2:#2f2440;
+      --ink:#f4eefb;
+      --ink-soft:#c7bbdf;
+      --ink-faint:#8b7fa8;
+      --line:#3a2e4d;
+      --accent-rgb:255 161 132;
+      --accent2-rgb:167 156 255;
+      --accent2-soft:#352c55;
+      --shadow:rgba(0,0,0,0.45);
+
+      --lv1-rgb:95 214 160;
+      --lv2-rgb:212 190 70;
+      --lv3-rgb:245 181 99;
+      --lv4-rgb:245 133 99;
+      --lv5-rgb:240 86 143;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#1b1526;
+    --bg-2:#241a30;
+    --surface:#251c34;
+    --surface-2:#2f2440;
+    --ink:#f4eefb;
+    --ink-soft:#c7bbdf;
+    --ink-faint:#8b7fa8;
+    --line:#3a2e4d;
+    --accent-rgb:255 161 132;
+    --accent2-rgb:167 156 255;
+    --accent2-soft:#352c55;
+    --shadow:rgba(0,0,0,0.45);
+
+    --lv1-rgb:95 214 160;
+    --lv2-rgb:212 190 70;
+    --lv3-rgb:245 181 99;
+    --lv4-rgb:245 133 99;
+    --lv5-rgb:240 86 143;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"Noto Sans TC","Fredoka",system-ui,sans-serif;
+    min-height:100vh;
+    position:relative;
+    overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  .glow{
+    position:fixed;
+    border-radius:50%;
+    filter:blur(60px);
+    pointer-events:none;
+    z-index:0;
+    opacity:0.55;
+  }
+  .glow-a{ width:360px; height:360px; top:-120px; left:-90px; background:rgb(var(--accent-rgb)/0.5); animation:float-a 22s ease-in-out infinite; }
+  .glow-b{ width:300px; height:300px; bottom:-100px; right:-80px; background:rgb(var(--accent2-rgb)/0.45); animation:float-b 26s ease-in-out infinite; }
+  .glow-c{ width:220px; height:220px; top:40%; right:10%; background:rgb(var(--lv2-rgb)/0.3); animation:float-a 30s ease-in-out infinite reverse; }
+  @keyframes float-a{ 0%,100%{ transform:translate(0,0); } 50%{ transform:translate(30px,25px); } }
+  @keyframes float-b{ 0%,100%{ transform:translate(0,0); } 50%{ transform:translate(-25px,-20px); } }
+  @media (prefers-reduced-motion: reduce){
+    .glow-a,.glow-b,.glow-c{ animation:none; }
+  }
+
+  .app-shell{
+    position:relative;
+    z-index:1;
+    max-width:640px;
+    margin:0 auto;
+    padding:40px 20px 64px;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+  }
+
+  .kicker{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    align-self:flex-start;
+    font-family:"Fredoka",sans-serif;
+    font-size:12.5px;
+    font-weight:600;
+    letter-spacing:0.09em;
+    text-transform:uppercase;
+    color:rgb(var(--accent2-rgb));
+    background:var(--accent2-soft);
+    padding:6px 14px;
+    border-radius:999px;
+    margin-bottom:16px;
+  }
+
+  .card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:28px;
+    padding:36px 32px;
+    box-shadow:0 24px 48px -24px var(--shadow);
+  }
+
+  h1{
+    font-family:"Noto Sans TC",sans-serif;
+    font-weight:900;
+    font-size:clamp(28px,6vw,38px);
+    line-height:1.25;
+    margin:0 0 10px;
+    text-wrap:balance;
+  }
+  .subtitle{
+    font-size:15.5px;
+    color:var(--ink-soft);
+    margin:0 0 22px;
+    font-weight:500;
+  }
+  p.body-text{
+    font-size:15px;
+    line-height:1.85;
+    color:var(--ink-soft);
+    max-width:34em;
+    margin:0 0 14px;
+  }
+  .note{
+    font-size:13px;
+    line-height:1.75;
+    color:var(--ink-faint);
+    background:var(--surface-2);
+    border-radius:16px;
+    padding:14px 16px;
+    margin-top:20px;
+  }
+
+  .btn{
+    font-family:"Fredoka",sans-serif;
+    font-weight:600;
+    font-size:15.5px;
+    border:none;
+    border-radius:999px;
+    padding:14px 26px;
+    cursor:pointer;
+    transition:transform .15s ease, box-shadow .15s ease, opacity .15s ease;
+  }
+  .btn:focus-visible{ outline:3px solid rgb(var(--accent2-rgb)/0.6); outline-offset:2px; }
+  .btn-primary{
+    color:#3a1a10;
+    background:linear-gradient(135deg, rgb(var(--accent-rgb)), rgb(var(--lv2-rgb)));
+    box-shadow:0 14px 26px -12px rgb(var(--accent-rgb)/0.65);
+  }
+  .btn-primary:hover{ transform:translateY(-2px); }
+  .btn-primary:disabled{ opacity:0.4; cursor:not-allowed; transform:none; box-shadow:none; }
+  .btn-ghost{
+    color:var(--ink-soft);
+    background:transparent;
+    border:1px solid var(--line);
+  }
+  .btn-ghost:hover{ background:var(--surface-2); }
+  .btn-row{ display:flex; gap:12px; margin-top:28px; align-items:center; }
+  .btn-row .btn-primary{ margin-left:auto; }
+
+  .bar-track{
+    height:10px;
+    border-radius:999px;
+    background:var(--surface-2);
+    overflow:hidden;
+    position:relative;
+  }
+  .bar-fill{
+    height:100%;
+    border-radius:999px;
+    background:linear-gradient(90deg, rgb(var(--accent2-rgb)), rgb(var(--accent-rgb)));
+    transition:width .35s ease;
+  }
+  .quiz-meta{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    margin-bottom:10px;
+    font-family:"Fredoka",sans-serif;
+  }
+  .quiz-meta .step{ font-size:13px; color:var(--ink-faint); font-weight:500; letter-spacing:0.02em; }
+  .quiz-meta .step b{ color:rgb(var(--accent2-rgb)); font-size:14px; }
+
+  .question-text{
+    font-size:19px;
+    font-weight:700;
+    line-height:1.6;
+    margin:22px 0 22px;
+    text-wrap:balance;
+  }
+  .options{ display:flex; flex-direction:column; gap:10px; }
+  .option{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    text-align:left;
+    width:100%;
+    padding:14px 16px;
+    border-radius:16px;
+    border:1.5px solid var(--line);
+    background:var(--surface);
+    color:var(--ink);
+    font-family:"Noto Sans TC",sans-serif;
+    font-size:14.5px;
+    font-weight:500;
+    cursor:pointer;
+    transition:border-color .15s ease, background .15s ease, transform .1s ease;
+  }
+  .option:hover{ border-color:rgb(var(--accent2-rgb)/0.5); }
+  .option:focus-visible{ outline:3px solid rgb(var(--accent2-rgb)/0.5); outline-offset:2px; }
+  .option .dot{
+    width:18px; height:18px; border-radius:50%;
+    border:1.5px solid var(--ink-faint);
+    flex:none;
+    position:relative;
+  }
+  .option.selected{
+    border-color:rgb(var(--accent-rgb));
+    background:rgb(var(--accent-rgb)/0.1);
+  }
+  .option.selected .dot{
+    border-color:rgb(var(--accent-rgb));
+    background:rgb(var(--accent-rgb));
+    box-shadow:inset 0 0 0 3px var(--surface);
+  }
+
+  .view{ display:none; }
+  .view.active{ display:block; animation:fade-in .4s ease; }
+  @keyframes fade-in{ from{ opacity:0; transform:translateY(6px); } to{ opacity:1; transform:translateY(0); } }
+  @media (prefers-reduced-motion: reduce){ .view.active{ animation:none; } }
+
+  .result-head{ display:flex; gap:20px; align-items:center; margin-bottom:22px; }
+  .badge-wrap{ position:relative; flex:none; width:88px; height:88px; }
+  .result-badge{
+    width:88px; height:88px; border-radius:50%;
+    flex:none;
+    position:relative;
+    overflow:hidden;
+    background:radial-gradient(circle at 50% 45%, #fff 0%, #fff var(--core,10%), rgb(var(--lv-rgb)) calc(var(--core,10%) + 26%), rgb(var(--lv-rgb)) 100%);
+    box-shadow:0 0 var(--glow-blur,12px) var(--glow-spread,2px) rgb(var(--lv-rgb)/0.5);
+    animation:badge-pop .5s cubic-bezier(.34,1.56,.64,1) both, badge-pulse 2.6s ease-in-out .55s infinite;
+  }
+  .result-badge::after{
+    content:"";
+    position:absolute; inset:0;
+    background:linear-gradient(115deg, transparent 32%, rgb(255 255 255/0.6) 50%, transparent 68%);
+    transform:translateX(-130%);
+    animation:badge-sweep 1.8s ease-in-out .6s 1;
+  }
+  .result-badge[data-level="lv1"]{ --lv-rgb:var(--lv1-rgb); --core:8%; --glow-blur:12px; --glow-spread:2px; }
+  .result-badge[data-level="lv2"]{ --lv-rgb:var(--lv2-rgb); --core:20%; --glow-blur:18px; --glow-spread:3px; }
+  .result-badge[data-level="lv3"]{ --lv-rgb:var(--lv3-rgb); --core:32%; --glow-blur:26px; --glow-spread:4px; }
+  .result-badge[data-level="lv4"]{ --lv-rgb:var(--lv4-rgb); --core:44%; --glow-blur:36px; --glow-spread:7px; }
+  .result-badge[data-level="lv5"]{ --lv-rgb:var(--lv5-rgb); --core:60%; --glow-blur:50px; --glow-spread:11px; }
+  @keyframes badge-pop{ from{ transform:scale(.55); opacity:0; } to{ transform:scale(1); opacity:1; } }
+  @keyframes badge-pulse{
+    0%,100%{ box-shadow:0 0 var(--glow-blur,12px) var(--glow-spread,2px) rgb(var(--lv-rgb)/0.5); }
+    50%{ box-shadow:0 0 calc(var(--glow-blur,12px) * 1.7) calc(var(--glow-spread,2px) * 2) rgb(var(--lv-rgb)/0.7); }
+  }
+  @keyframes badge-sweep{ to{ transform:translateX(130%); } }
+
+  .spark{
+    position:absolute; top:50%; left:50%; width:6px; height:6px; margin:-3px;
+    border-radius:50%;
+    background:rgb(var(--lv-rgb));
+    opacity:0;
+    animation:spark-fly .85s ease-out forwards;
+  }
+  @keyframes spark-fly{
+    0%{ opacity:1; transform:translate(0,0) scale(1); }
+    100%{ opacity:0; transform:translate(var(--dx),var(--dy)) scale(.3); }
+  }
+
+  .result-score{ font-family:"Fredoka",sans-serif; font-size:13px; color:var(--ink-faint); font-weight:500; }
+  .result-score b{ font-size:26px; color:var(--ink); font-variant-numeric:tabular-nums; }
+  .level-chip{
+    display:inline-block;
+    font-family:"Noto Sans TC",sans-serif;
+    font-weight:700;
+    font-size:20px;
+    margin:4px 0 4px;
+  }
+  .level-tagline{ font-size:14px; color:var(--ink-soft); font-weight:500; }
+
+  .exposure-meter{ margin:22px 0 26px; }
+  .exposure-meter .track{
+    position:relative;
+    height:14px;
+    border-radius:999px;
+    background:linear-gradient(90deg,
+      rgb(var(--lv1-rgb)) 0%, rgb(var(--lv1-rgb)) 20%,
+      rgb(var(--lv2-rgb)) 20%, rgb(var(--lv2-rgb)) 40%,
+      rgb(var(--lv3-rgb)) 40%, rgb(var(--lv3-rgb)) 60%,
+      rgb(var(--lv4-rgb)) 60%, rgb(var(--lv4-rgb)) 80%,
+      rgb(var(--lv5-rgb)) 80%, rgb(var(--lv5-rgb)) 100%);
+    overflow:visible;
+  }
+  .exposure-meter .clip-zone{
+    position:absolute; top:0; right:0; bottom:0; width:20%;
+    border-radius:0 999px 999px 0;
+    background:repeating-linear-gradient(-45deg, rgb(255 255 255/0.35) 0 4px, transparent 4px 8px);
+  }
+  .exposure-meter .marker{
+    position:absolute; top:50%; width:20px; height:20px;
+    transform:translate(-50%,-50%);
+    border-radius:50%;
+    background:var(--surface);
+    border:3px solid var(--ink);
+    box-shadow:0 2px 6px var(--shadow);
+    transition:left 1.1s cubic-bezier(.22,1,.36,1);
+  }
+  .exposure-meter .labels{
+    display:flex; justify-content:space-between;
+    font-size:11px; color:var(--ink-faint);
+    margin-top:8px; font-family:"Fredoka",sans-serif; letter-spacing:0.02em;
+  }
+
+  .section-label{
+    font-family:"Fredoka",sans-serif;
+    font-size:12.5px;
+    font-weight:600;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:rgb(var(--accent2-rgb));
+    margin:26px 0 10px;
+  }
+  ul.tips{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:10px; }
+  ul.tips li{
+    display:flex; gap:10px; align-items:flex-start;
+    background:var(--surface-2);
+    border-radius:14px;
+    padding:12px 14px;
+    font-size:14px;
+    line-height:1.7;
+    color:var(--ink-soft);
+    opacity:0;
+    transform:translateY(6px);
+    animation:tip-in .45s ease forwards;
+  }
+  ul.tips li:nth-child(1){ animation-delay:.15s; }
+  ul.tips li:nth-child(2){ animation-delay:.28s; }
+  ul.tips li:nth-child(3){ animation-delay:.41s; }
+  @keyframes tip-in{ to{ opacity:1; transform:translateY(0); } }
+  ul.tips li::before{
+    content:"";
+    width:8px; height:8px; border-radius:50%;
+    background:rgb(var(--accent2-rgb));
+    flex:none;
+    margin-top:8px;
+  }
+
+  .hotline{
+    margin-top:24px;
+    font-size:12.5px;
+    line-height:1.8;
+    color:var(--ink-faint);
+    border-top:1px solid var(--line);
+    padding-top:16px;
+  }
+  .hotline b{ color:var(--ink-soft); }
+
+  .restart-row{ display:flex; justify-content:center; margin-top:28px; }
+  .share-row{ display:flex; justify-content:center; gap:12px; margin-top:28px; flex-wrap:wrap; }
+  .btn-download{
+    color:var(--ink);
+    background:var(--surface-2);
+    border:1.5px solid rgb(var(--accent2-rgb)/0.4);
+  }
+  .btn-download:hover{ border-color:rgb(var(--accent2-rgb)); background:var(--accent2-soft); }
+  .btn-download:disabled{ opacity:.55; cursor:wait; transform:none; }
+  .download-status{
+    font-size:12.5px; color:var(--ink-faint);
+    text-align:center; margin-top:10px; min-height:16px;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .result-badge{ animation:none; }
+    .result-badge::after{ display:none; }
+    .exposure-meter .marker{ transition:none; }
+    ul.tips li{ animation:none; opacity:1; transform:none; }
+    .spark{ display:none; }
+  }
+
+  @media (max-width:480px){
+    .card{ padding:28px 22px; }
+    .result-head{ flex-direction:column; align-items:flex-start; }
+  }
+</style>
+
+<div class="glow glow-a"></div>
+<div class="glow glow-b"></div>
+<div class="glow glow-c"></div>
+
+<div class="app-shell">
+
+  <section id="view-intro" class="view active">
+    <div class="kicker">自我覺察 · 非診斷工具</div>
+    <div class="card">
+      <h1>過曝指數測驗</h1>
+      <p class="subtitle">一份關於社群、訊息與自我價值感的小測驗</p>
+      <p class="body-text">我們活在史上最安全、卻也最容易感到不安的年代。手機、Email 與工作群組全天候圍繞著上班族——下班之後，訊息不會真的下班，社群上的按讚與比較也不會真的打烊。這就是「過曝世代」的日常：長時間暴露在他人目光、即時已讀與職場評價之下，漸漸失去喘息與沉澱的空間。</p>
+      <p class="body-text">這份測驗根據「過曝世代」的心理觀察設計，聚焦上班族最常遇到的情境，想幫你檢視：社群回饋、已讀焦慮、職場訊息壓力與社會比較，占據了你多少心理空間。</p>
+      <p class="body-text">請依照「最近兩週」的真實感受作答，共 10 題，大約 2 分鐘。沒有標準答案，這只是一面鏡子。</p>
+      <div class="note">此測驗僅供自我覺察參考，無法取代專業診斷。若你長期感到嚴重困擾，建議尋求心理諮商或精神科協助。</div>
+      <div class="btn-row" style="justify-content:flex-end;">
+        <button class="btn btn-primary" id="btn-start">開始測驗 →</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="view-quiz" class="view">
+    <div class="card">
+      <div class="quiz-meta">
+        <span class="step">第 <b id="q-index">1</b> / 10 題</span>
+        <span class="step" id="q-hint">依直覺選擇最符合你的選項</span>
+      </div>
+      <div class="bar-track"><div class="bar-fill" id="progress-fill" style="width:10%;"></div></div>
+      <p class="question-text" id="question-text"></p>
+      <div class="options" id="options"></div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" id="btn-prev">上一題</button>
+        <button class="btn btn-primary" id="btn-next" disabled>下一題</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="view-result" class="view">
+    <div class="card">
+      <div class="result-head">
+        <div class="badge-wrap" id="badge-wrap">
+          <div class="result-badge" id="result-badge" data-level="lv1"></div>
+        </div>
+        <div>
+          <div class="result-score">你的過曝指數　<b id="score-num">0</b> / 40</div>
+          <div class="level-chip" id="level-name" style="color:var(--ink);"></div>
+          <div class="level-tagline" id="level-tagline"></div>
+        </div>
+      </div>
+
+      <div class="exposure-meter">
+        <div class="track">
+          <div class="clip-zone"></div>
+          <div class="marker" id="meter-marker" style="left:0%;"></div>
+        </div>
+        <div class="labels"><span>恰到好光</span><span>微光暈染</span><span>光斑漸強</span><span>過曝警戒</span><span>全幅過曝</span></div>
+      </div>
+
+      <p class="body-text" id="level-desc" style="max-width:none;"></p>
+
+      <div class="section-label">可以怎麼做</div>
+      <ul class="tips" id="level-tips"></ul>
+
+      <div class="hotline"><b>需要的時候，別自己扛：</b>衛福部安心專線 <b>1925</b>（24 小時）、生命線 <b>1995</b>。過曝世代的孤獨，常常來自「大家好像都過得很好」，但你並不孤單。</div>
+
+      <div class="share-row">
+        <button class="btn btn-download" id="btn-download">下載我的過曝卡片</button>
+        <button class="btn btn-ghost" id="btn-restart">重新測驗一次</button>
+      </div>
+      <div class="download-status" id="download-status" role="status"></div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  var QUESTIONS = [
+    "發布動態或貼文後，我會忍不住每隔幾分鐘查看按讚數或留言。",
+    "看到同事或朋友的限時動態、聚餐合照，卻沒有邀請我時，我會感到被排除在外。",
+    "主管或同事已讀不回（或遲遲未讀）我的訊息時，我會開始腦補各種負面猜測，情緒因此受影響。",
+    "下班後，只要工作群組（LINE、Slack、Teams）跳出新訊息，我還是會忍不住立刻點開查看。",
+    "滑到同事或同齡朋友買房、升遷、結婚生子的貼文時，我會覺得自己的人生進度落後、不夠好。",
+    "我會依照社群上的讚數、留言數或追蹤人數，來判斷這篇貼文（或這份工作成果）「值不值得」。",
+    "面對主管的期待或同事間的競爭壓力，我會選擇乾脆擺爛、降低標準，告訴自己「反正我就爛」，安靜地少做一點就好。",
+    "睡前我會滑手機滑到超過原本預計的時間，即使知道隔天還要上班、一定會很累。",
+    "工作訊息或信箱有一段時間沒有新通知，我會忍不住主動打開確認，心裡才踏實。",
+    "我覺得自己在社群上呈現「工作有成、生活順遂」的樣子，和真實的職場疲憊感有明顯落差，這讓我感到疲憊。"
+  ];
+  var OPTIONS = ["從不","很少","有時","經常","總是"];
+
+  var LEVELS = [
+    { key:"lv1", min:0, max:8, name:"恰到好光", tagline:"光線均勻，你抓住了平衡",
+      desc:"你在數位生活與心理健康之間，抓到了不錯的平衡。多數時候你能區分「線上表現」與「真實自我」，對訊息、按讚數也能保持適度的距離感。少數時刻仍會分心，那很正常——重要的是你目前還沒被牽著鼻子走。",
+      tips:[
+        "持續維持你現有的界線感，例如固定的「離線時段」。",
+        "偶爾把你怎麼做到不焦慮的方法分享給朋友，你的經驗可能對他們有幫助。",
+        "留意生活中的重大轉變（換工作、感情狀態變化）是否會讓過曝傾向悄悄上升。"
+      ] },
+    { key:"lv2", min:9, max:16, name:"微光暈染", tagline:"偶爾被拉走注意力，但還在掌控中",
+      desc:"你偶爾會被社群與訊息的節奏牽動情緒，例如已讀不回時的短暫不安，或滑到別人精彩生活時一閃而過的比較心。這些反應還不至於主導你的生活，但已經是身體在提醒你：數位邊界開始模糊了。",
+      tips:[
+        "已讀不回時，先去做別的事，給自己 10 分鐘再回來看訊息，多數焦慮會自然降溫。",
+        "設定手機在特定時段（例如睡前一小時）自動進入勿擾模式。",
+        "練習區分「事實」與「腦補」：對方沒有秒回，不代表在針對你。"
+      ] },
+    { key:"lv3", min:17, max:24, name:"光斑漸強", tagline:"評價的重量，已開始影響你的情緒",
+      desc:"數位生活的評價壓力，已經明顯影響你的情緒與自我感受。你可能常拿自己的「幕後」和別人的「精修預告片」比較，或把已讀未回、通知數量當成人際關係的溫度計。這個階段值得認真正視，長期下來容易演變成慢性焦慮或自我價值感低落。",
+      tips:[
+        "列出 3 件讓你有成就感、卻從來沒發到社群上的事，重新練習「不需要被看見的價值」。",
+        "設定 App 使用時間限制，並觀察觸發滑手機衝動的情境：無聊、焦慮，還是習慣？",
+        "如果「反正我就爛」的念頭頻繁出現，那其實是一種自我保護機制，值得被溫柔看待，而不是苛責自己。"
+      ] },
+    { key:"lv4", min:25, max:32, name:"過曝警戒", tagline:"持續消耗心理能量的模式，該調整了",
+      desc:"你的情緒與自我價值感，有相當大一部分被社群回饋與訊息節奏綁架。可能出現明顯的睡眠受影響、下班放學後仍無法真正放鬆，或頻繁的自我否定。這已經不只是「習慣」，而是持續消耗心理能量的模式，建議開始採取具體行動調整。",
+      tips:[
+        "認真執行一次「數位斷食」實驗，例如一個週末不滑社群媒體，記錄身心的變化。",
+        "若職場訊息是主要壓力來源，考慮和主管或團隊討論「非上班時間回覆訊息」的共識與界線。",
+        "睡眠、情緒起伏若已影響日常功能（工作效率、人際關係），建議尋求心理諮商等專業協助，而不是單靠自己硬撐。"
+      ] },
+    { key:"lv5", min:33, max:40, name:"全幅過曝", tagline:"長期高強度監控與比較，你不該獨自硬撐",
+      desc:"你目前幾乎持續處在高強度的數位監控與自我評價壓力之下，這樣的狀態如果持續下去，容易發展成長期的焦慮、倦怠甚至憂鬱傾向。這不是意志力不夠，而是長期處在一個設計成讓人上癮、隨時比較的環境裡——幾乎每個人到這個強度都會撐不住。",
+      tips:[
+        "強烈建議尋求心理諮商或精神科專業協助，你現在承受的重量不該只靠自己扛。",
+        "優先處理睡眠與基本作息，這是恢復心理韌性的地基。",
+        "告訴身邊至少一個信任的人你現在的狀態，過曝世代的孤獨感往往來自「看起來大家都過得很好」，但你並不孤單。"
+      ] }
+  ];
+
+  var LEVEL_COLORS = {
+    lv1:[95,214,160], lv2:[212,190,70], lv3:[245,181,99], lv4:[245,133,99], lv5:[240,86,143]
+  };
+  var LEVEL_ORDER = ["lv1","lv2","lv3","lv4","lv5"];
+
+  var answers = new Array(QUESTIONS.length).fill(null);
+  var current = 0;
+  var currentResult = null;
+
+  function prefersReducedMotion(){
+    return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  }
+
+  var viewIntro = document.getElementById("view-intro");
+  var viewQuiz = document.getElementById("view-quiz");
+  var viewResult = document.getElementById("view-result");
+
+  function showView(view){
+    [viewIntro, viewQuiz, viewResult].forEach(function(v){ v.classList.remove("active"); });
+    view.classList.add("active");
+  }
+
+  document.getElementById("btn-start").addEventListener("click", function(){
+    current = 0;
+    renderQuestion();
+    showView(viewQuiz);
+  });
+
+  var qIndexEl = document.getElementById("q-index");
+  var progressFill = document.getElementById("progress-fill");
+  var questionTextEl = document.getElementById("question-text");
+  var optionsEl = document.getElementById("options");
+  var btnPrev = document.getElementById("btn-prev");
+  var btnNext = document.getElementById("btn-next");
+
+  function renderQuestion(){
+    qIndexEl.textContent = current + 1;
+    progressFill.style.width = ((current + 1) / QUESTIONS.length * 100) + "%";
+    questionTextEl.textContent = QUESTIONS[current];
+    optionsEl.innerHTML = "";
+    OPTIONS.forEach(function(label, i){
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "option" + (answers[current] === i ? " selected" : "");
+      btn.setAttribute("aria-pressed", answers[current] === i ? "true" : "false");
+      btn.innerHTML = '<span class="dot"></span><span>' + label + "</span>";
+      btn.addEventListener("click", function(){
+        answers[current] = i;
+        renderQuestion();
+      });
+      optionsEl.appendChild(btn);
+    });
+    btnPrev.style.visibility = current === 0 ? "hidden" : "visible";
+    btnNext.disabled = answers[current] === null;
+    btnNext.textContent = current === QUESTIONS.length - 1 ? "查看結果" : "下一題";
+  }
+
+  btnPrev.addEventListener("click", function(){
+    if(current > 0){ current -= 1; renderQuestion(); }
+  });
+
+  btnNext.addEventListener("click", function(){
+    if(answers[current] === null) return;
+    if(current < QUESTIONS.length - 1){
+      current += 1;
+      renderQuestion();
+    } else {
+      renderResult();
+      showView(viewResult);
+    }
+  });
+
+  document.addEventListener("keydown", function(e){
+    if(!viewQuiz.classList.contains("active")) return;
+    if(e.key >= "1" && e.key <= "5"){
+      answers[current] = parseInt(e.key, 10) - 1;
+      renderQuestion();
+    } else if(e.key === "Enter" && answers[current] !== null){
+      btnNext.click();
+    }
+  });
+
+  function renderResult(){
+    var score = answers.reduce(function(sum, v){ return sum + (v || 0); }, 0);
+    var level = LEVELS.find(function(l){ return score >= l.min && score <= l.max; }) || LEVELS[0];
+    currentResult = { score: score, level: level };
+
+    document.getElementById("result-badge").setAttribute("data-level", level.key);
+    document.getElementById("level-name").textContent = level.name;
+    document.getElementById("level-tagline").textContent = level.tagline;
+    document.getElementById("level-desc").textContent = level.desc;
+
+    var tipsEl = document.getElementById("level-tips");
+    tipsEl.innerHTML = "";
+    level.tips.forEach(function(tip){
+      var li = document.createElement("li");
+      li.textContent = tip;
+      tipsEl.appendChild(li);
+    });
+
+    var badgeWrap = document.getElementById("badge-wrap");
+    badgeWrap.querySelectorAll(".spark").forEach(function(s){ s.remove(); });
+
+    var scoreEl = document.getElementById("score-num");
+    var markerEl = document.getElementById("meter-marker");
+    var target = (score / 40 * 100) + "%";
+
+    if(prefersReducedMotion()){
+      scoreEl.textContent = score;
+      markerEl.style.left = target;
+    } else {
+      scoreEl.textContent = "0";
+      markerEl.style.left = "0%";
+      requestAnimationFrame(function(){
+        requestAnimationFrame(function(){ markerEl.style.left = target; });
+      });
+      animateCountUp(scoreEl, score, 900);
+      spawnSparks(badgeWrap, level.key);
+    }
+  }
+
+  function animateCountUp(el, target, duration){
+    var start = null;
+    function step(ts){
+      if(start === null) start = ts;
+      var progress = Math.min((ts - start) / duration, 1);
+      var eased = 1 - Math.pow(1 - progress, 3);
+      el.textContent = Math.round(eased * target);
+      if(progress < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  function spawnSparks(wrap, levelKey){
+    if(levelKey !== "lv1" && levelKey !== "lv2") return;
+    wrap.style.setProperty("--lv-rgb", "var(--" + levelKey + "-rgb)");
+    var count = 10;
+    for(var i = 0; i < count; i++){
+      var spark = document.createElement("span");
+      spark.className = "spark";
+      var angle = (Math.PI * 2 * i) / count;
+      var dist = 34 + (i % 3) * 10;
+      spark.style.setProperty("--dx", Math.round(Math.cos(angle) * dist) + "px");
+      spark.style.setProperty("--dy", Math.round(Math.sin(angle) * dist) + "px");
+      spark.style.animationDelay = (0.5 + i * 0.02) + "s";
+      wrap.appendChild(spark);
+    }
+  }
+
+  function roundRectPath(ctx, x, y, w, h, r){
+    if(ctx.roundRect){ ctx.beginPath(); ctx.roundRect(x, y, w, h, r); return; }
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function wrapCanvasText(ctx, text, cx, y, maxWidth, lineHeight){
+    var lines = [];
+    var line = "";
+    for(var i = 0; i < text.length; i++){
+      var test = line + text[i];
+      if(ctx.measureText(test).width > maxWidth && line){
+        lines.push(line);
+        line = text[i];
+      } else {
+        line = test;
+      }
+    }
+    if(line) lines.push(line);
+    lines.forEach(function(l, idx){ ctx.fillText(l, cx, y + idx * lineHeight); });
+    return lines.length;
+  }
+
+  function buildResultCard(level, score){
+    var fontJobs = [
+      '600 28px "Fredoka"', '700 42px "Fredoka"',
+      '900 84px "Noto Sans TC"', '500 32px "Noto Sans TC"', '600 30px "Noto Sans TC"'
+    ].map(function(f){ return document.fonts.load(f).catch(function(){}); });
+
+    return Promise.all(fontJobs).then(function(){
+      var W = 1080, H = 1350;
+      var canvas = document.createElement("canvas");
+      canvas.width = W; canvas.height = H;
+      var ctx = canvas.getContext("2d");
+      var rgb = LEVEL_COLORS[level.key];
+      var rgbStr = rgb.join(",");
+
+      var bg = ctx.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, "#1f1830");
+      bg.addColorStop(1, "#140e1f");
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, W, H);
+
+      ctx.save();
+      ctx.filter = "blur(120px)";
+      ctx.fillStyle = "rgba(255,143,112,0.32)";
+      ctx.beginPath(); ctx.arc(140, 160, 260, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "rgba(139,127,232,0.3)";
+      ctx.beginPath(); ctx.arc(W - 140, H - 220, 300, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "rgba(" + rgbStr + ",0.26)";
+      ctx.beginPath(); ctx.arc(W - 160, 300, 240, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+
+      ctx.textAlign = "center";
+      ctx.fillStyle = "rgba(243,238,251,0.75)";
+      ctx.font = '600 28px "Fredoka", sans-serif';
+      ctx.fillText("自我覺察 · 過曝指數測驗", W / 2, 120);
+
+      var bx = W / 2, by = 440, br = 190;
+      var levelIdx = LEVEL_ORDER.indexOf(level.key);
+      var core = 0.08 + levelIdx * 0.13;
+      var grad = ctx.createRadialGradient(bx, by - 20, 4, bx, by, br);
+      grad.addColorStop(0, "#ffffff");
+      grad.addColorStop(Math.min(core, 0.9), "#ffffff");
+      grad.addColorStop(Math.min(core + 0.26, 0.98), "rgb(" + rgbStr + ")");
+      grad.addColorStop(1, "rgb(" + rgbStr + ")");
+      ctx.save();
+      ctx.shadowColor = "rgba(" + rgbStr + ",0.65)";
+      ctx.shadowBlur = 70;
+      ctx.beginPath(); ctx.arc(bx, by, br, 0, Math.PI * 2);
+      ctx.fillStyle = grad; ctx.fill();
+      ctx.restore();
+
+      ctx.fillStyle = "#f4eefb";
+      ctx.font = '700 40px "Fredoka", sans-serif';
+      ctx.fillText(score + " / 40", W / 2, 710);
+
+      ctx.fillStyle = "#ffffff";
+      ctx.font = '900 84px "Noto Sans TC", sans-serif';
+      ctx.fillText(level.name, W / 2, 810);
+
+      ctx.fillStyle = "rgba(243,238,251,0.8)";
+      ctx.font = '500 32px "Noto Sans TC", sans-serif';
+      wrapCanvasText(ctx, level.tagline, W / 2, 875, 820, 44);
+
+      var meterW = 760, meterX = (W - meterW) / 2, meterY = 1040, meterH = 26;
+      ctx.save();
+      roundRectPath(ctx, meterX, meterY, meterW, meterH, meterH / 2);
+      ctx.clip();
+      var segW = meterW / 5;
+      LEVEL_ORDER.forEach(function(key, i){
+        ctx.fillStyle = "rgb(" + LEVEL_COLORS[key].join(",") + ")";
+        ctx.fillRect(meterX + i * segW, meterY, segW + 1, meterH);
+      });
+      ctx.restore();
+
+      var markerX = meterX + (score / 40) * meterW;
+      ctx.beginPath();
+      ctx.arc(markerX, meterY + meterH / 2, 15, 0, Math.PI * 2);
+      ctx.fillStyle = "#f4eefb";
+      ctx.fill();
+      ctx.lineWidth = 5;
+      ctx.strokeStyle = "#2e2440";
+      ctx.stroke();
+
+      ctx.fillStyle = "rgba(243,238,251,0.6)";
+      ctx.font = '600 30px "Noto Sans TC", sans-serif';
+      ctx.fillText("看見自己，是好好休息的第一步。", W / 2, 1230);
+
+      return canvas;
+    });
+  }
+
+  var btnDownload = document.getElementById("btn-download");
+  var downloadStatus = document.getElementById("download-status");
+
+  btnDownload.addEventListener("click", function(){
+    if(!currentResult) return;
+    var originalLabel = btnDownload.textContent;
+    downloadStatus.textContent = "";
+    btnDownload.disabled = true;
+    btnDownload.textContent = "製作卡片中…";
+
+    buildResultCard(currentResult.level, currentResult.score).then(function(canvas){
+      return new Promise(function(resolve, reject){
+        canvas.toBlob(function(blob){
+          if(blob) resolve(blob); else reject(new Error("canvas empty"));
+        }, "image/png");
+      });
+    }).then(function(blob){
+      if(!window.claude || !window.claude.use){
+        downloadStatus.textContent = "此環境暫不支援下載，建議改用截圖保存。";
+        return null;
+      }
+      return window.claude.use("downloads").then(function(downloads){
+        if(!downloads){
+          downloadStatus.textContent = "此環境暫不支援下載，建議改用截圖保存。";
+          return null;
+        }
+        var filename = "過曝指數-" + currentResult.level.name + ".png";
+        return downloads.save({ filename: filename, data: blob });
+      });
+    }).then(function(result){
+      if(result && result.status === "saved"){
+        downloadStatus.textContent = "卡片已儲存！";
+      }
+    }).catch(function(err){
+      if(err && err.code === "declined"){
+        downloadStatus.textContent = "已取消下載。";
+      } else if(err && err.code === "rate_limited"){
+        downloadStatus.textContent = "請稍候再試一次。";
+      } else {
+        downloadStatus.textContent = "下載失敗，建議改用截圖保存。";
+      }
+    }).finally(function(){
+      btnDownload.disabled = false;
+      btnDownload.textContent = originalLabel;
+    });
+  });
+
+  document.getElementById("btn-restart").addEventListener("click", function(){
+    answers = new Array(QUESTIONS.length).fill(null);
+    current = 0;
+    currentResult = null;
+    downloadStatus.textContent = "";
+    showView(viewIntro);
+  });
+})();
+</script>
