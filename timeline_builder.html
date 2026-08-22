@@ -275,17 +275,16 @@
       color: var(--text-muted);
     }
     details summary { cursor: pointer; }
-    #jsonCode {
+    .json-textarea {
+      width: 100%;
       background: #151515;
       border: 1px solid var(--border-color);
       border-radius: 6px;
-      padding: 10px;
-      overflow-x: auto;
+      padding: 8px;
       font-family: monospace;
       font-size: 0.75rem;
       color: #00ff66;
-      max-height: 200px;
-      overflow-y: auto;
+      resize: vertical;
     }
 
     .download-banner {
@@ -380,13 +379,20 @@
           <p id="resultsSummary"></p>
           <div id="map"></div>
           <div class="point-list" id="pointList"></div>
-          <details>
-            <summary>進階:顯示原始 JSON 內容</summary>
-            <pre id="jsonCode">// 尚未產生</pre>
+
+          <button class="btn-primary btn-block" onclick="downloadOrShare()">📥 下載 / 分享 JSON 檔案</button>
+          <div class="download-banner" id="downloadBanner"></div>
+
+          <details id="manualFallback">
+            <summary>⚠️ 沒有跳出下載或分享視窗?改用手動複製存檔</summary>
+            <p class="upload-hint">如果按了上面的按鈕後,只跳出一個顯示一堆文字的新分頁(網址開頭是 <code>blob:</code>),代表你的瀏覽器不支援直接下載:<br>
+            1. 點選下方「複製 JSON 內容」<br>
+            2. 打開手機的「備忘錄 / 記事本」App,貼上剛複製的內容<br>
+            3. 另存新檔,檔名設為 <strong id="fallbackFilename">timeline.json</strong>(副檔名務必是 <code>.json</code>)</p>
+            <textarea id="jsonTextarea" class="json-textarea" readonly rows="6">// 尚未產生</textarea>
+            <button class="btn-secondary btn-block" onclick="copyJSON()">📋 複製 JSON 內容</button>
           </details>
         </div>
-
-        <div class="download-banner" id="downloadBanner"></div>
 
         <div class="nav-row">
           <button class="btn-secondary" onclick="goToStep(1)">← 上一步</button>
@@ -474,6 +480,7 @@
       skippedCount = 0;
       document.getElementById('resultsBox').style.display = 'none';
       document.getElementById('downloadBanner').classList.remove('show');
+      document.getElementById('manualFallback').open = false;
       document.getElementById('continueBtn').disabled = true;
       document.getElementById('guideFilename').textContent = '(尚未下載)';
       goToStep(1);
@@ -545,10 +552,6 @@
       photoPoints.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
 
       renderResults();
-
-      if (photoPoints.length > 0) {
-        downloadJSON();
-      }
     }
 
     function removePoint(index) {
@@ -680,30 +683,81 @@
       return { semanticSegments };
     }
 
+    function jsonText() {
+      return JSON.stringify(generateGoogleJSON(), null, 2);
+    }
+
     function updatePreview() {
-      const json = generateGoogleJSON();
-      document.getElementById('jsonCode').textContent = JSON.stringify(json, null, 2);
+      const filename = `${todayStr()}.json`;
+      document.getElementById('jsonTextarea').value = jsonText();
+      document.getElementById('fallbackFilename').textContent = filename;
+      document.getElementById('guideFilename').textContent = filename;
     }
 
     function todayStr() {
       return new Date().toISOString().slice(0, 10);
     }
 
-    function downloadJSON() {
-      const json = generateGoogleJSON();
-      const filename = `${todayStr()}.json`;
-      const blob = new Blob([JSON.stringify(json, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      a.click();
-      URL.revokeObjectURL(url);
-
+    function showDownloadBanner(html) {
       const banner = document.getElementById('downloadBanner');
       banner.classList.add('show');
-      banner.innerHTML = `✅ 已自動下載 <strong>${filename}</strong> 到你的「下載」資料夾,下一步會用到它。<br>沒有跳出下載視窗?<button class="btn-link-inline" onclick="downloadJSON()">點此手動下載</button>`;
-      document.getElementById('guideFilename').textContent = filename;
+      banner.innerHTML = html;
+    }
+
+    // 依序嘗試:①手機分享(iOS/Android 最可靠)②傳統下載(桌機瀏覽器)
+    // 若兩者都失敗或不支援,使用者可展開下方「手動複製存檔」區塊。
+    async function downloadOrShare() {
+      const filename = `${todayStr()}.json`;
+      const text = jsonText();
+      const blob = new Blob([text], { type: 'application/json' });
+
+      if (navigator.canShare && navigator.share) {
+        try {
+          const file = new File([blob], filename, { type: 'application/json' });
+          if (navigator.canShare({ files: [file] })) {
+            await navigator.share({ files: [file], title: filename });
+            showDownloadBanner(`✅ 已透過分享功能送出 <strong>${filename}</strong>,請在分享選單裡選擇「儲存到檔案」(iPhone)或「儲存」(Android)。`);
+            return;
+          }
+        } catch (err) {
+          if (err && err.name === 'AbortError') return; // 使用者自行取消分享,不用顯示錯誤
+          console.error('分享失敗,改用一般下載', err);
+        }
+      }
+
+      try {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 4000);
+        showDownloadBanner(`✅ 已嘗試下載 <strong>${filename}</strong>。若跳出的是一個顯示文字的新分頁而不是存檔提示,請改用下方「手動複製存檔」。`);
+      } catch (err) {
+        console.error('下載失敗', err);
+        showDownloadBanner(`⚠️ 無法自動下載,請改用下方「手動複製存檔」把內容存成 <strong>${filename}</strong>。`);
+        document.getElementById('manualFallback').open = true;
+      }
+    }
+
+    async function copyJSON() {
+      const ta = document.getElementById('jsonTextarea');
+      ta.focus();
+      ta.select();
+      ta.setSelectionRange(0, 999999);
+      try {
+        await navigator.clipboard.writeText(ta.value);
+        alert('已複製!請貼到「備忘錄 / 記事本」App,另存新檔並把副檔名改成 .json。');
+      } catch (err) {
+        try {
+          document.execCommand('copy');
+          alert('已複製!請貼到「備忘錄 / 記事本」App,另存新檔並把副檔名改成 .json。');
+        } catch (e) {
+          alert('自動複製失敗,請手動選取文字框裡的內容後長按選擇「複製」。');
+        }
+      }
     }
   </script>
 </body>
