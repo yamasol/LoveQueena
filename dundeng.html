@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>台語辭典．頓蹬</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap');
+
+  :root{
+    --paper: #f4ecd8;
+    --ink: #2c2a24;
+    --ink-soft: #55503f;
+    --seal: #a13d3d;
+    --seal-dark: #7e2f2f;
+    --gold: #b08d3f;
+    --gold-soft: #ded1a1;
+    --pos-bg: #eef1e2;
+    --pos-line: #7c8c5a;
+    --neg-bg: #f5e6e0;
+    --neg-line: #b0604a;
+  }
+
+  *{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html,body{
+    margin:0;
+    padding:0;
+    background: #d9cfb2;
+    font-family: 'Noto Serif TC', serif;
+    color: var(--ink);
+    -webkit-text-size-adjust: 100%;
+  }
+
+  .page{
+    position:relative;
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto;
+    background:
+      radial-gradient(ellipse at 15% 5%, rgba(255,255,255,0.35), transparent 40%),
+      radial-gradient(ellipse at 90% 90%, rgba(0,0,0,0.05), transparent 45%),
+      var(--paper);
+    padding: 22px 18px 28px;
+    min-height: 100vh;
+  }
+
+  .running-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    font-family:'Noto Sans TC', sans-serif;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--ink-soft);
+    border-bottom: 1px solid var(--gold-soft);
+    padding-bottom: 8px;
+    margin-bottom: 18px;
+  }
+  .running-head b{ color: var(--gold); font-weight:700; }
+
+  .head-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+
+  .zhuyin{
+    font-family:'Noto Sans TC', sans-serif;
+    font-size: 11.5px;
+    letter-spacing: 1.5px;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+    display:block;
+  }
+
+  .headword{
+    font-size: 34px;
+    font-weight: 900;
+    letter-spacing: 3px;
+    line-height:1.1;
+    color: var(--ink);
+  }
+
+  .seal{
+    width: 50px;
+    height: 50px;
+    border: 2.5px solid var(--seal);
+    border-radius: 5px;
+    color: var(--seal);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:'Noto Serif TC', serif;
+    font-weight:900;
+    font-size: 11px;
+    letter-spacing: 1px;
+    line-height:1.3;
+    text-align:center;
+    transform: rotate(-6deg);
+    opacity:0.9;
+    flex-shrink:0;
+    writing-mode: vertical-rl;
+    padding: 4px 2px;
+    margin-top: 2px;
+  }
+
+  .illus-wrap{
+    display:flex;
+    justify-content:center;
+    margin: 8px 0 4px;
+  }
+  .illus{
+    width: 92px;
+    opacity: 0.85;
+  }
+
+  .meta-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap: 8px;
+    align-items:center;
+    font-family:'Noto Sans TC', sans-serif;
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    margin: 10px 0 6px;
+    line-height:1.6;
+  }
+  .meta-tag{
+    background: var(--gold-soft);
+    color: #5a4a1f;
+    padding: 3px 9px;
+    border-radius: 3px;
+    font-weight:500;
+    white-space:nowrap;
+  }
+  .meta-source{
+    width:100%;
+    margin-top: 4px;
+  }
+
+  .divider{
+    height:1px;
+    background: repeating-linear-gradient(90deg, var(--ink-soft) 0 6px, transparent 6px 10px);
+    opacity:0.5;
+    margin: 16px 0 18px;
+  }
+
+  .section-label{
+    font-family:'Noto Serif TC', serif;
+    font-weight:700;
+    font-size: 15px;
+    color: var(--seal-dark);
+    display:flex;
+    align-items:center;
+    gap:7px;
+    margin-bottom: 10px;
+    letter-spacing:0.5px;
+  }
+  .section-label::before{
+    content:"";
+    width:6px; height:6px;
+    background: var(--seal);
+    display:inline-block;
+    transform: rotate(45deg);
+    flex-shrink:0;
+  }
+
+  .def-block{
+    border-left: 4px solid;
+    border-radius: 4px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+    font-size: 14px;
+    line-height: 1.85;
+  }
+  .def-block.pos{ background: var(--pos-bg); border-color: var(--pos-line); }
+  .def-block.neg{ background: var(--neg-bg); border-color: var(--neg-line); }
+
+  .def-tag{
+    display:inline-block;
+    font-family:'Noto Sans TC', sans-serif;
+    font-size: 11px;
+    font-weight:700;
+    padding: 2px 8px;
+    border-radius: 999px;
+    margin-bottom: 7px;
+  }
+  .def-tag.pos{ background: var(--pos-line); color: #fdfdf6; }
+  .def-tag.neg{ background: var(--neg-line); color: #fdfdf6; }
+
+  .example{
+    font-size: 13.5px;
+    line-height: 1.85;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+    border-left: 4px solid var(--gold);
+    background: rgba(176,141,63,0.07);
+    border-radius: 4px;
+  }
+  .example .num{
+    font-family:'Noto Sans TC', sans-serif;
+    color: var(--gold);
+    font-weight:700;
+    margin-right: 4px;
+  }
+  .example .roman{
+    display:block;
+    font-family:'Noto Sans TC', sans-serif;
+    font-size: 11.5px;
+    font-style: italic;
+    color: var(--gold);
+    letter-spacing: 0.3px;
+    margin: 2px 0 1px;
+  }
+  .example .gloss{
+    display:block;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+  }
+
+  .tags-block{
+    margin: 4px 0 20px;
+    font-size: 13px;
+  }
+  .tags-block > div{ margin-bottom: 8px; }
+  .tags-block .label{
+    font-family:'Noto Sans TC', sans-serif;
+    font-weight:700;
+    color: var(--ink-soft);
+    margin-right: 6px;
+    font-size:12px;
+    display:block;
+    margin-bottom: 5px;
+  }
+  .chip{
+    display:inline-block;
+    padding: 2px 9px;
+    margin: 2px 4px 2px 0;
+    border: 1px solid var(--ink-soft);
+    border-radius: 999px;
+    font-size: 12px;
+    color: var(--ink-soft);
+  }
+
+  .note{
+    position:relative;
+    background: #fbf6e8;
+    border: 1px dashed var(--gold);
+    border-radius: 3px;
+    padding: 14px 14px 14px 40px;
+    font-size: 12.5px;
+    line-height: 1.85;
+    color: var(--ink-soft);
+    margin-top: 4px;
+  }
+  .note::before{
+    content: "📌";
+    position:absolute;
+    left: 12px;
+    top: 13px;
+    font-size: 14px;
+  }
+  .note b{ color: var(--seal-dark); }
+
+  .footer{
+    display:flex;
+    justify-content:space-between;
+    font-family:'Noto Sans TC', sans-serif;
+    font-size: 10px;
+    color: var(--ink-soft);
+    opacity:0.7;
+    margin-top: 22px;
+    padding-top: 10px;
+    border-top: 1px solid var(--gold-soft);
+    letter-spacing:0.5px;
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <div class="running-head">
+    <span><b>台語辭典</b>．日常用語篇</span>
+    <span>詞條 073</span>
+  </div>
+
+  <div class="head-top">
+    <div>
+      <span class="zhuyin">tùn-tenn ・ tùn-tinn</span>
+      <div class="headword">頓蹬</div>
+    </div>
+    <div class="seal">台語<br>動詞</div>
+  </div>
+
+  <div class="illus-wrap">
+    <svg class="illus" viewBox="0 0 120 140" xmlns="http://www.w3.org/2000/svg">
+      <g fill="none" stroke="#55503f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" opacity="0.8">
+        <path d="M28 20 H92 A12 12 0 0 1 104 32 V64 A12 12 0 0 1 92 76 H52 L38 90 L40 76 H28 A12 12 0 0 1 16 64 V32 A12 12 0 0 1 28 20 Z"/>
+        <circle cx="44" cy="48" r="3" fill="#55503f" stroke="none"/>
+        <circle cx="60" cy="48" r="3" fill="#55503f" stroke="none"/>
+        <circle cx="76" cy="48" r="3" fill="#55503f" stroke="none"/>
+        <circle cx="42" cy="104" r="3.5"/>
+        <ellipse cx="42" cy="119" rx="8" ry="11"/>
+        <circle cx="77" cy="108" r="3.5" stroke-dasharray="3 4"/>
+        <ellipse cx="77" cy="123" rx="8" ry="11" stroke-dasharray="3 4"/>
+      </g>
+    </svg>
+  </div>
+
+  <div class="meta-row">
+    <span class="meta-tag">臺灣閩南語</span>
+    <span class="meta-tag">動詞</span>
+    <span class="meta-source">出處：教育部《臺灣閩南語常用詞辭典》。音讀 tùn-tenn／tùn-tinn，泉腔、漳腔並收。</span>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="section-label">【釋義】</div>
+
+  <div class="def-block pos">
+    <span class="def-tag pos">① 本義・腳步之停</span><br>
+    暫停腳步、暫時停頓。指行進中忽然停住，或動作做到一半中斷下來。
+  </div>
+
+  <div class="def-block neg">
+    <span class="def-tag neg">② 引申・思維之停</span><br>
+    腦筋忽然停擺、思路接不上來。表面上斷的是話，實際上斷的是<b>思維</b>——不是嘴巴講不出口，是那一刻腦袋沒跟上，下一句該接什麼一時想不起來。聽的人立刻察覺：他心裡沒有一條清楚的線。
+  </div>
+
+  <div class="section-label">【辭典用例】</div>
+
+  <div class="example">
+    <span class="num">①</span>毋通頓蹬，緊行！
+    <span class="roman">M̄-thang tùn-tenn, kín kiânn!</span>
+    <span class="gloss">不要停下腳步，快走！</span>
+  </div>
+  <div class="example">
+    <span class="num">②</span>話講一半，就頓蹬。
+    <span class="roman">Uē kóng tsi̍t-puànn, tō tùn-tenn.</span>
+    <span class="gloss">話說了一半，就停下來了。</span>
+  </div>
+
+  <div class="section-label">【職場造句】</div>
+
+  <div class="example">
+    <span class="num">③</span>Alan 對客戶報告到一半忽然頓蹬，Grace 即時打斷：「你腦筋要很清楚，毋通頓蹬啊！」
+    <span class="roman">M̄-thang tùn-tenn--ah!</span>
+    <span class="gloss">老闆原話：「你腦筋要很清楚，母湯頓爹阿！」——「母湯」即「毋通」，「頓爹」即「頓蹬」。<b>此處取釋義②「思維之停」</b>：老闆嗆的不是他講得不順，是他腦筋當下沒有一條清楚的線。客戶就坐在對面，這一停，停在最不能停的地方。</span>
+  </div>
+  <div class="example">
+    <span class="num">④</span>提案報到一半煞頓蹬，後壁彼十分鐘攏白費工。
+    <span class="roman">Thê-àn pò kàu tsi̍t-puànn suah tùn-tenn.</span>
+    <span class="gloss">提案報到一半突然卡住，後面那十分鐘全都白費。</span>
+  </div>
+
+  <div class="tags-block">
+    <div>
+      <span class="label">近義詞</span>
+      <span class="chip">頓蹄</span>
+    </div>
+    <div>
+      <span class="label">異用字</span>
+      <span class="chip">頓𩨑</span><span class="chip">頓爹（音近俗寫）</span>
+    </div>
+    <div>
+      <span class="label">相對語感</span>
+      <span class="chip">輾轉 liàn-tńg（口齒流利）</span><span class="chip">順喙</span>
+    </div>
+  </div>
+
+  <div class="note">
+    <b>辨析小提醒：</b>「頓蹬」講的是<b>中途停住</b>這個動作本身——腳步可以頓蹬，話也可以頓蹬，與「頓蹄」同義。用在人身上時語氣不算重，但放在對客戶簡報的場合就不一樣：<b>停頓的那一秒，暴露的是腦筋當下清不清楚。</b>不是不會講，是還沒想透到不用想。
+  </div>
+
+  <div class="footer">
+    <span>台語辭典．第三版</span>
+    <span>日常用語類</span>
+  </div>
+
+</div>
+
+</body>
+</html>

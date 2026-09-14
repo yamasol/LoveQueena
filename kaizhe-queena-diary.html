@@ -1,0 +1,937 @@
+<title>楷哲的追昆娜日記</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
+<style>
+  :root{
+    --ground:#FFF1F5;
+    --ground-2:#FFE3EC;
+    --surface:#FFFFFF;
+    --surface-2:#FFF7FA;
+    --ink:#43202F;
+    --ink-soft:#8A5C6E;
+    --pink:#FF5E9C;
+    --pink-deep:#D62E72;
+    --pink-wash:#FFD6E5;
+    --gold:#E39A0B;
+    --gold-wash:#FFEFCB;
+    --mint:#2FA791;
+    --mint-wash:#D7F3EC;
+    --track:#2A1C25;
+    --line:#FFC9DC;
+    --shadow:0 10px 26px rgba(214,46,114,.14);
+    --shadow-soft:0 4px 14px rgba(214,46,114,.10);
+    --r-lg:26px;
+    --r-md:18px;
+    --r-sm:12px;
+    --display:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+    --body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+    --tech:"Chakra Petch","Noto Sans TC",ui-monospace,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#1B0E16;
+      --ground-2:#25131E;
+      --surface:#2A1622;
+      --surface-2:#321A28;
+      --ink:#FFE6EF;
+      --ink-soft:#C79BB0;
+      --pink:#FF7FB2;
+      --pink-deep:#FFA3C8;
+      --pink-wash:#4A2135;
+      --gold:#F6C86A;
+      --gold-wash:#43331A;
+      --mint:#7FD8C4;
+      --mint-wash:#1E3B37;
+      --track:#0E0710;
+      --line:#4A2436;
+      --shadow:0 10px 28px rgba(0,0,0,.45);
+      --shadow-soft:0 4px 14px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#1B0E16;
+    --ground-2:#25131E;
+    --surface:#2A1622;
+    --surface-2:#321A28;
+    --ink:#FFE6EF;
+    --ink-soft:#C79BB0;
+    --pink:#FF7FB2;
+    --pink-deep:#FFA3C8;
+    --pink-wash:#4A2135;
+    --gold:#F6C86A;
+    --gold-wash:#43331A;
+    --mint:#7FD8C4;
+    --mint-wash:#1E3B37;
+    --track:#0E0710;
+    --line:#4A2436;
+    --shadow:0 10px 28px rgba(0,0,0,.45);
+    --shadow-soft:0 4px 14px rgba(0,0,0,.35);
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    background:var(--ground);
+    color:var(--ink);
+    font-family:var(--body);
+    line-height:1.85;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  .bubbles{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;}
+  .bubbles i{
+    position:absolute;bottom:-60px;border-radius:50%;
+    background:radial-gradient(circle at 32% 30%, rgba(255,255,255,.85), var(--pink-wash) 62%);
+    opacity:.5;animation:rise linear infinite;
+  }
+  @keyframes rise{
+    0%{transform:translateY(0) scale(.7);opacity:0;}
+    12%{opacity:.55;}
+    100%{transform:translateY(-115vh) scale(1.05);opacity:0;}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .bubbles{display:none;}
+    *{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important;}
+  }
+
+  .wrap{
+    position:relative;z-index:1;
+    max-width:680px;margin:0 auto;
+    padding-inline:20px;padding-block:0 64px;
+  }
+
+  /* ── 封面 ───────────────────────────── */
+  .cover{
+    position:relative;margin-top:22px;
+    background:var(--surface);
+    border:2px solid var(--line);
+    border-radius:var(--r-lg);
+    box-shadow:var(--shadow);
+    overflow:hidden;
+  }
+  .flag{
+    height:16px;
+    background-image:
+      linear-gradient(45deg,var(--pink) 25%,transparent 25%,transparent 75%,var(--pink) 75%),
+      linear-gradient(45deg,var(--pink) 25%,transparent 25%,transparent 75%,var(--pink) 75%);
+    background-size:16px 16px;
+    background-position:0 0,8px 8px;
+    background-color:var(--pink-wash);
+  }
+  .cover-in{padding:26px 22px 24px;display:flex;flex-direction:column;gap:14px;}
+  .eyebrow{
+    font-family:var(--tech);font-weight:600;font-size:.72rem;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--pink-deep);
+  }
+  h1{
+    font-family:var(--display);font-weight:900;
+    font-size:clamp(1.9rem,7.6vw,2.6rem);
+    line-height:1.25;margin:0;text-wrap:balance;letter-spacing:-.01em;
+  }
+  h1 .hl{
+    background:linear-gradient(transparent 62%, var(--pink-wash) 62%);
+    padding:0 .1em;
+  }
+  .sub{margin:0;color:var(--ink-soft);font-size:.98rem;}
+  .cover-meta{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:4px;
+  }
+  .stat{
+    background:var(--surface-2);border:1px solid var(--line);
+    border-radius:var(--r-sm);padding:10px 8px;text-align:center;
+  }
+  .stat b{
+    display:block;font-family:var(--tech);font-weight:700;font-size:1.18rem;
+    color:var(--pink-deep);font-variant-numeric:tabular-nums;line-height:1.3;
+  }
+  .stat span{display:block;font-size:.7rem;color:var(--ink-soft);letter-spacing:.04em;}
+
+  /* ── 心動計數器 ─────────────────────── */
+  .heart-box{
+    margin-top:16px;background:linear-gradient(160deg,var(--pink-wash),var(--surface));
+    border:2px dashed var(--pink);border-radius:var(--r-lg);
+    padding:20px;text-align:center;display:flex;flex-direction:column;gap:12px;align-items:center;
+  }
+  .heart-btn{
+    font:inherit;cursor:pointer;border:0;border-radius:999px;
+    background:var(--pink);color:#fff;font-weight:700;
+    padding:14px 30px;font-size:1.05rem;
+    box-shadow:0 6px 0 var(--pink-deep);
+    transition:transform .12s ease, box-shadow .12s ease;
+  }
+  .heart-btn:active{transform:translateY(5px);box-shadow:0 1px 0 var(--pink-deep);}
+  .heart-btn:focus-visible,button:focus-visible,input:focus-visible,summary:focus-visible{
+    outline:3px solid var(--gold);outline-offset:3px;
+  }
+  .meter{
+    width:100%;height:14px;border-radius:999px;background:var(--surface);
+    border:1px solid var(--line);overflow:hidden;
+  }
+  .meter div{
+    height:100%;width:0%;border-radius:999px;
+    background:linear-gradient(90deg,var(--pink),var(--gold));
+    transition:width .35s cubic-bezier(.34,1.4,.64,1);
+  }
+  .heart-note{font-size:.85rem;color:var(--ink-soft);margin:0;min-height:1.6em;}
+  .heart-count{font-family:var(--tech);font-weight:700;color:var(--pink-deep);}
+  .fly{
+    position:fixed;z-index:50;pointer-events:none;font-size:22px;
+    animation:fly 1.5s ease-out forwards;
+  }
+  @keyframes fly{
+    0%{transform:translate(0,0) scale(.6);opacity:1;}
+    100%{transform:translate(var(--dx),-150px) scale(1.3) rotate(var(--rot));opacity:0;}
+  }
+
+  /* ── 一般區塊 ───────────────────────── */
+  section{margin-top:40px;}
+  .sec-head{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+  .sec-no{
+    font-family:var(--tech);font-weight:700;font-size:.78rem;letter-spacing:.1em;
+    background:var(--track);color:#FFE6EF;border-radius:8px;padding:4px 9px;flex:none;
+  }
+  h2{
+    font-family:var(--display);font-weight:900;font-size:1.32rem;margin:0;
+    line-height:1.4;text-wrap:balance;
+  }
+  h3{
+    font-family:var(--display);font-weight:700;font-size:1.06rem;margin:0 0 6px;
+    color:var(--pink-deep);
+  }
+  p{margin:0 0 1em;}
+  .chapter{
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);
+    padding:20px 18px;box-shadow:var(--shadow-soft);margin-bottom:14px;
+  }
+  .chapter p:last-child{margin-bottom:0;}
+  .chapter .tag{
+    font-family:var(--tech);font-size:.7rem;font-weight:600;letter-spacing:.12em;
+    color:var(--ink-soft);display:block;margin-bottom:2px;
+  }
+  em.mark{
+    font-style:normal;font-weight:700;color:var(--pink-deep);
+    background:var(--pink-wash);border-radius:6px;padding:1px 5px;
+  }
+  blockquote{
+    margin:16px 0 0;padding:16px 18px;
+    background:var(--gold-wash);border-left:5px solid var(--gold);
+    border-radius:0 var(--r-sm) var(--r-sm) 0;font-weight:500;
+  }
+  blockquote p{margin:0;}
+
+  /* ── 相機模擬器 ─────────────────────── */
+  .panel{
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);
+    padding:18px;box-shadow:var(--shadow-soft);
+  }
+  .viewfinder{
+    position:relative;height:150px;border-radius:var(--r-sm);overflow:hidden;
+    background:#6E6E78;
+    border:3px solid var(--track);
+  }
+  .vf-scene{
+    position:absolute;inset:0;
+    background:linear-gradient(180deg,#BFE4F5 0%,#BFE4F5 52%,#8C8C94 52%,#6E6E78 100%);
+    transition:filter .25s ease;
+  }
+  .vf-bg{position:absolute;inset:0;display:flex;align-items:center;gap:36px;padding-top:22px;will-change:transform;transition:filter .2s ease,transform .2s ease;}
+  .vf-bg span{
+    flex:none;width:26px;height:54px;border-radius:4px;background:#E4728F;opacity:.9;
+  }
+  .vf-bg span:nth-child(even){background:#5E8FC7;height:66px;}
+  .vf-fence{
+    position:absolute;inset:0;pointer-events:none;
+    background-image:
+      repeating-linear-gradient(48deg, rgba(235,235,240,.95) 0 2px, transparent 2px 13px),
+      repeating-linear-gradient(-48deg, rgba(235,235,240,.95) 0 2px, transparent 2px 13px);
+    transition:opacity .25s ease, filter .25s ease;
+  }
+  .vf-noise{
+    position:absolute;inset:0;pointer-events:none;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
+    transition:opacity .25s ease;opacity:0;
+  }
+  .vf-kart{
+    position:absolute;left:50%;top:58%;transform:translate(-50%,-50%);
+    font-size:46px;filter:drop-shadow(0 6px 6px rgba(0,0,0,.35));transition:filter .2s ease;
+  }
+  .vf-grid{
+    position:absolute;inset:14px;border:1px solid rgba(255,255,255,.55);
+    border-radius:4px;
+  }
+  .vf-grid::before,.vf-grid::after{
+    content:"";position:absolute;background:rgba(255,255,255,.35);
+  }
+  .vf-grid::before{left:33.3%;right:33.3%;top:0;bottom:0;border-left:1px solid rgba(255,255,255,.35);border-right:1px solid rgba(255,255,255,.35);}
+  .vf-grid::after{top:33.3%;bottom:33.3%;left:0;right:0;border-top:1px solid rgba(255,255,255,.35);border-bottom:1px solid rgba(255,255,255,.35);}
+  .vf-tag{
+    position:absolute;left:10px;bottom:8px;font-family:var(--tech);font-weight:600;
+    font-size:.72rem;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.7);letter-spacing:.08em;
+  }
+  .ev-wrap{margin-top:12px;}
+  .ev-head{
+    display:flex;justify-content:space-between;align-items:baseline;
+    font-family:var(--tech);font-size:.72rem;font-weight:600;letter-spacing:.1em;
+    color:var(--ink-soft);margin-bottom:5px;
+  }
+  .ev-head b{color:var(--pink-deep);font-size:.82rem;font-variant-numeric:tabular-nums;}
+  .ev-bar{
+    position:relative;height:10px;border-radius:999px;border:1px solid var(--line);
+    background:linear-gradient(90deg,#2A1C25,var(--surface-2) 50%,#FFFFFF);
+  }
+  .ev-bar::before{
+    content:"";position:absolute;left:50%;top:-4px;bottom:-4px;width:2px;
+    background:var(--ink-soft);opacity:.5;
+  }
+  .ev-needle{
+    position:absolute;top:-5px;width:6px;height:18px;border-radius:3px;
+    background:var(--pink);border:1px solid var(--surface);
+    transform:translateX(-50%);transition:left .3s cubic-bezier(.34,1.3,.64,1);
+  }
+  .fx-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+  .chip{
+    font-family:var(--tech);font-size:.7rem;font-weight:600;letter-spacing:.06em;
+    border-radius:999px;padding:4px 10px;border:1px solid var(--line);
+    background:var(--surface-2);color:var(--ink-soft);
+  }
+  .chip.good{background:var(--mint-wash);border-color:var(--mint);color:var(--mint);}
+  .chip.warn{background:var(--gold-wash);border-color:var(--gold);color:var(--gold);}
+  .chip.bad{background:var(--pink-wash);border-color:var(--pink);color:var(--pink-deep);}
+  .sliders{display:flex;flex-direction:column;gap:12px;margin-top:16px;}
+  .slider-row{display:grid;grid-template-columns:64px 1fr 78px;align-items:center;gap:10px;}
+  .slider-row label{font-size:.84rem;font-weight:700;}
+  .slider-row output{
+    font-family:var(--tech);font-weight:700;font-size:.92rem;text-align:right;
+    color:var(--pink-deep);font-variant-numeric:tabular-nums;
+  }
+  input[type=range]{width:100%;accent-color:var(--pink);}
+  .verdict{
+    margin-top:14px;background:var(--surface-2);border:1px dashed var(--line);
+    border-radius:var(--r-sm);padding:12px 14px;font-size:.9rem;
+  }
+  .verdict b{color:var(--pink-deep);}
+  .btn-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;}
+  .btn{
+    font:inherit;font-size:.86rem;font-weight:700;cursor:pointer;
+    border:2px solid var(--pink);background:var(--surface);color:var(--pink-deep);
+    border-radius:999px;padding:8px 16px;transition:background .15s ease,color .15s ease;
+  }
+  .btn:hover{background:var(--pink);color:#fff;}
+  .btn.solid{background:var(--pink);color:#fff;}
+  .btn.solid:hover{background:var(--pink-deep);border-color:var(--pink-deep);}
+
+  /* ── 換車 ───────────────────────────── */
+  .kart-stage{
+    display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px;
+  }
+  .kart{
+    border-radius:var(--r-sm);padding:16px 12px;text-align:center;
+    border:2px solid var(--line);background:var(--surface-2);
+    transition:transform .2s ease,border-color .2s ease,opacity .3s ease;
+  }
+  .kart .num{
+    font-family:var(--tech);font-weight:700;font-size:1.9rem;line-height:1.1;
+    font-variant-numeric:tabular-nums;
+  }
+  .kart .state{font-size:.78rem;color:var(--ink-soft);}
+  .kart.active{border-color:var(--pink);box-shadow:var(--shadow-soft);}
+  .kart.dead{opacity:.45;}
+  .kart.shake{animation:shake .38s ease;}
+  @keyframes shake{
+    0%,100%{transform:translateX(0);}
+    20%{transform:translateX(-7px) rotate(-2deg);}
+    45%{transform:translateX(6px) rotate(2deg);}
+    70%{transform:translateX(-4px);}
+  }
+  .log{
+    margin-top:12px;font-family:var(--tech);font-size:.84rem;
+    background:var(--track);color:#FFD9E7;border-radius:var(--r-sm);
+    padding:12px 14px;min-height:76px;display:flex;flex-direction:column;gap:4px;
+  }
+
+  /* ── 底片收集 ───────────────────────── */
+  .film-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px;}
+  .frame{
+    aspect-ratio:1/1;border-radius:10px;border:2px solid var(--line);
+    background:var(--surface-2);display:flex;align-items:center;justify-content:center;
+    font-size:1.5rem;color:var(--ink-soft);position:relative;overflow:hidden;
+  }
+  .frame.shot{background:var(--pink-wash);border-color:var(--pink);}
+  .frame small{
+    position:absolute;bottom:3px;left:0;right:0;text-align:center;
+    font-family:var(--tech);font-size:.58rem;color:var(--ink-soft);letter-spacing:.06em;
+  }
+  .caption-box{
+    margin-top:12px;padding:12px 14px;border-radius:var(--r-sm);
+    background:var(--mint-wash);border:1px solid var(--mint);font-size:.9rem;min-height:3.2em;
+  }
+  .flash{
+    position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:60;
+  }
+  .flash.on{animation:flashfx .32s ease-out;}
+  @keyframes flashfx{0%{opacity:.9;}100%{opacity:0;}}
+
+  /* ── 時間軸 ─────────────────────────── */
+  .timeline{position:relative;padding-left:26px;}
+  .timeline::before{
+    content:"";position:absolute;left:7px;top:6px;bottom:6px;width:4px;border-radius:4px;
+    background-image:linear-gradient(var(--track) 50%, var(--pink-wash) 50%);
+    background-size:4px 14px;
+  }
+  .tl-item{position:relative;margin-bottom:16px;}
+  .tl-item::before{
+    content:"";position:absolute;left:-24px;top:7px;width:14px;height:14px;border-radius:50%;
+    background:var(--pink);border:3px solid var(--surface);box-shadow:0 0 0 2px var(--pink);
+  }
+  .tl-time{
+    font-family:var(--tech);font-weight:700;font-size:.78rem;letter-spacing:.08em;
+    color:var(--pink-deep);
+  }
+  .tl-body{font-size:.94rem;}
+
+  /* ── 清單 ───────────────────────────── */
+  .check{
+    display:flex;gap:10px;align-items:flex-start;padding:11px 13px;
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);
+    margin-bottom:8px;cursor:pointer;font-size:.92rem;
+  }
+  .check input{margin-top:4px;accent-color:var(--pink);width:18px;height:18px;flex:none;}
+  .check.done{background:var(--pink-wash);}
+  .check.done span{text-decoration:line-through;color:var(--ink-soft);}
+
+  /* ── 語錄 / 結尾 ────────────────────── */
+  .quote-card{
+    background:linear-gradient(150deg,var(--pink),var(--pink-deep));
+    color:#fff;border-radius:var(--r-lg);padding:26px 22px;box-shadow:var(--shadow);
+    position:relative;overflow:hidden;
+  }
+  .quote-card::after{
+    content:"♥";position:absolute;right:-10px;bottom:-26px;font-size:8rem;opacity:.16;line-height:1;
+  }
+  .quote-card p{font-size:1.06rem;font-weight:500;margin:0 0 10px;position:relative;}
+  .quote-card .by{font-family:var(--tech);font-size:.78rem;letter-spacing:.1em;opacity:.9;margin:0;}
+  footer{
+    margin-top:36px;text-align:center;color:var(--ink-soft);font-size:.8rem;line-height:1.9;
+  }
+  footer .flagline{
+    height:10px;border-radius:6px;margin-bottom:14px;
+    background-image:
+      linear-gradient(45deg,var(--ink-soft) 25%,transparent 25%,transparent 75%,var(--ink-soft) 75%),
+      linear-gradient(45deg,var(--ink-soft) 25%,transparent 25%,transparent 75%,var(--ink-soft) 75%);
+    background-size:12px 12px;background-position:0 0,6px 6px;opacity:.4;
+  }
+  @media (max-width:400px){
+    .slider-row{grid-template-columns:56px 1fr 70px;gap:8px;}
+    .cover-meta{gap:6px;}
+  }
+</style>
+
+<div class="bubbles" id="bubbles" aria-hidden="true"></div>
+<div class="flash" id="flash" aria-hidden="true"></div>
+
+<div class="wrap">
+
+  <!-- 封面 -->
+  <header class="cover">
+    <div class="flag"></div>
+    <div class="cover-in">
+      <div class="eyebrow">Kaizhe × Queena — Chasing Log No.01</div>
+      <h1>從板橋開父皇神車 Altis，<br><span class="hl">一路殺去彰化追焦女神 Q</span></h1>
+      <p class="sub">一個人、一台 Altis、三顆鏡頭，還有一顆從出發就在亂跳的心。這是楷哲的追昆娜日記 · 彰化卡丁車大賽篇。</p>
+      <div class="cover-meta">
+        <div class="stat"><b>200</b><span>mm 焦段</span></div>
+        <div class="stat"><b>1/1000</b><span>追焦快門</span></div>
+        <div class="stat"><b>1</b><span>人到場（就我）</span></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- 心動指數 -->
+  <div class="heart-box">
+    <p class="sub" style="margin:0;font-weight:700;color:var(--ink)">今日心動指數</p>
+    <button class="heart-btn" id="heartBtn">💗 按一下就想起她比 YA</button>
+    <div class="meter"><div id="heartFill"></div></div>
+    <p class="heart-note" id="heartNote">心動值 <span class="heart-count" id="heartNum">0</span> ／ 100・按下去看看會發生什麼事</p>
+  </div>
+
+  <!-- 正文 -->
+  <section>
+    <div class="sec-head"><span class="sec-no">CH.01</span><h2>說要挺的人呢？現場只剩我一個</h2></div>
+
+    <article class="chapter">
+      <span class="tag">出發背景</span>
+      <p>先講一件很好笑的事。上禮拜吃飯的時候，桌上每個人都喊得超大聲：「一定到」「絕對挺」「我開車載大家」。結果比賽當天，我到了現場，繞了一圈，<em class="mark">粉專班底就我一個人</em>。其他人有的跑去 K 旅人，有的直接在家躺平，群組訊息倒是回得很快，就是人沒出現。</p>
+      <p>那一瞬間其實有點好笑，也有點爽。好笑的是嘴上的義氣真的只值一頓飯；爽的是——那整條賽道邊，能幫她按下快門的人，剩我一個。</p>
+    </article>
+
+    <article class="chapter">
+      <span class="tag">戰車登場</span>
+      <h3>感謝父親大人出借「神車 Altis」</h3>
+      <p>這趟遠征的主角之一，是家裡那台豐田 Altis。沒有渦輪、沒有運動模式、冷氣有點大聲，但它有一個無可取代的優點：<strong>它永遠不會在你最需要的時候發不動</strong>（這句話等等會變成伏筆）。</p>
+      <p>從板橋漢生西路一帶上車，導航打上彰化，油門輕輕踩下去，這趟遠征就正式開始了。</p>
+    </article>
+  </section>
+
+  <!-- 裝備 + 模擬器 -->
+  <section>
+    <div class="sec-head"><span class="sec-no">CH.02</span><h2>裝備間：三顆鏡頭，但真正上場的只有 200mm</h2></div>
+
+    <article class="chapter">
+      <span class="tag">行前準備</span>
+      <p>這次背了三組鏡頭出門，結果九成的畫面都是 <em class="mark">200mm</em> 拍的。以前這顆都是拿去機場拍飛機的，沒想到拿來拍卡丁車更香——賽道邊距離拉得開，200mm 裁切放大之後，人臉表情、安全帽下的眼神全都吃得進去。</p>
+      <p>追焦參數我就大方公開，攝影組的朋友可以直接抄：快門 1/1000、光圈 F5.0 盡量開大、ISO 200、對焦模式吃 AF-C 連續自動對焦。剩下的就是腰力、腳步，還有一點點運氣。</p>
+      <p>對了，長途高速公路的小撇步順便送：<strong>開外循環 + 後窗開一條小縫</strong>。車內空氣一直換，整趟下來精神好很多，比灌三罐能量飲料有用。</p>
+    </article>
+
+    <div class="panel">
+      <p class="eyebrow" style="margin:0 0 10px">Panning Simulator · 追焦參數模擬器</p>
+      <div class="viewfinder">
+        <div class="vf-scene" id="vfScene">
+          <div class="vf-bg" id="vfBg">
+            <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+          </div>
+          <div class="vf-fence" id="vfFence"></div>
+          <div class="vf-kart" id="vfKart">🏎️</div>
+        </div>
+        <div class="vf-noise" id="vfNoise"></div>
+        <div class="vf-grid"></div>
+        <div class="vf-tag" id="vfTag">AF-C · 200mm</div>
+      </div>
+
+      <div class="ev-wrap">
+        <div class="ev-head"><span>EXPOSURE · 曝光</span><b id="evOut">±0.0 EV</b></div>
+        <div class="ev-bar"><div class="ev-needle" id="evNeedle" style="left:50%"></div></div>
+      </div>
+      <div class="fx-row" id="fxRow"></div>
+
+      <div class="sliders">
+        <div class="slider-row">
+          <label for="shutter">快門 S</label>
+          <input type="range" id="shutter" min="0" max="5" step="1" value="4">
+          <output id="shutterOut">1/1000</output>
+        </div>
+        <div class="slider-row">
+          <label for="aperture">光圈 F</label>
+          <input type="range" id="aperture" min="0" max="5" step="1" value="1">
+          <output id="apertureOut">F5.0</output>
+        </div>
+        <div class="slider-row">
+          <label for="iso">ISO</label>
+          <input type="range" id="iso" min="0" max="4" step="1" value="1">
+          <output id="isoOut">ISO 200</output>
+        </div>
+      </div>
+
+      <div class="verdict" id="verdict"></div>
+      <div class="btn-row">
+        <button class="btn solid" id="useKaizhe">用楷哲當天的設定</button>
+        <button class="btn" id="randomSet">亂轉看看會怎樣</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 行程 -->
+  <section>
+    <div class="sec-head"><span class="sec-no">CH.03</span><h2>深夜行軍：彰化體育場，免費 Wi-Fi 的男人</h2></div>
+
+    <article class="chapter">
+      <span class="tag">遠征行程</span>
+      <p>週六晚上提早出發，高速公路空得像包場，油門隨便踩都順順跑，音樂開大聲，整台 Altis 就是我的移動包廂。</p>
+      <p>然後是這趟最值得寫進省錢攻略的一段：<em class="mark">彰化市體育場</em>。樹蔭底下超安靜，還有免費 Wi-Fi，車子停好、椅背放倒，就這樣睡到早上。重點是——離卡丁車賽車場開車只要半小時。住宿費零元，睡眠品質意外地好，醒來旁邊還有人在晨跑，非常健康。</p>
+    </article>
+
+    <div class="panel">
+      <p class="eyebrow" style="margin:0 0 12px">Route Log · 遠征時間軸</p>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-time">SAT 21:40 · 板橋</div><div class="tl-body">漢生西路上車，父皇的 Altis 加滿油出發。</div></div>
+        <div class="tl-item"><div class="tl-time">SAT 23:5x · 國道</div><div class="tl-body">外循環＋後窗小縫，全程清醒零瞌睡。</div></div>
+        <div class="tl-item"><div class="tl-time">SUN 01:20 · 彰化體育場</div><div class="tl-body">樹蔭下停好，蹭免費 Wi-Fi，車上補眠。</div></div>
+        <div class="tl-item"><div class="tl-time">SUN 08:30 · 賽車場</div><div class="tl-body">開半小時到場，卡好位置，鏡頭上腳架前先熱身。</div></div>
+        <div class="tl-item"><div class="tl-time">SUN 10:xx · 排位賽</div><div class="tl-body">13 號車出戰，先抓好她的入彎節奏。</div></div>
+        <div class="tl-item"><div class="tl-time">SUN 13:xx · 正賽</div><div class="tl-body">13 號車突然發不動，臨陣換 8 號車上陣。</div></div>
+        <div class="tl-item"><div class="tl-time">SUN 18:xx · 回程</div><div class="tl-body">大塞車，開回土城還下起大雨。</div></div>
+        <div class="tl-item"><div class="tl-time">SUN 23:xx · 家裡</div><div class="tl-body">幾百張 RAW 檔，熬夜修到天亮。</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 比賽直擊 -->
+  <section>
+    <div class="sec-head"><span class="sec-no">CH.04</span><h2>那一顆比 YA：這趟車資跟肝，值了</h2></div>
+
+    <article class="chapter">
+      <span class="tag">粉紅泡泡時刻</span>
+      <p>現場除了賽車場官方攝影師，還有小貓在旁邊幫忙錄影之外，會一直追著 Q 拍照錄影的，就只有我。所以整場比賽下來，某個角落一直有一支 200mm 對著她，這件事她應該也感覺得到。</p>
+      <p>然後，關鍵的那一下來了。她在賽道上經過我這個彎的時候，<em class="mark">直接對著我的鏡頭比了 YA、還比了手勢</em>。不是對著人群、不是對著官方攝影，是對著我那顆 200mm。而且眼神真的有對到。</p>
+      <p>我跟你講，那一秒我腦袋是空的，手還在追焦、還在按連拍，但心裡只有一句話：<strong>這趟的油錢、過路費、跟等一下要熬的那個夜，全部都值了。</strong></p>
+      <blockquote>
+        <p>回家看 RAW 檔的時候，那一張是連拍裡第 3 張。前面兩張她還在轉頭，後面兩張已經出彎。就那一張，眼睛、手勢、車身角度全部到位——追焦這種東西，一整天就是在等這一格。</p>
+      </blockquote>
+    </article>
+
+    <div class="panel">
+      <p class="eyebrow" style="margin:0 0 4px">Shutter Game · 幫楷哲按快門</p>
+      <p class="sub" style="margin:0 0 8px;font-size:.88rem">連拍九格。按下去，看看這捲底片抓到了什麼。</p>
+      <div class="film-strip" id="filmStrip"></div>
+      <div class="caption-box" id="captionBox">底片還是空的，按下快門開始連拍。</div>
+      <div class="btn-row">
+        <button class="btn solid" id="shootBtn">📸 按下快門</button>
+        <button class="btn" id="resetFilm">換一捲底片</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 換車 -->
+  <section>
+    <div class="sec-head"><span class="sec-no">CH.05</span><h2>13 號車罷工，8 號車救援</h2></div>
+
+    <article class="chapter">
+      <span class="tag">現場戰況</span>
+      <p>排位賽他們跑的是 13 號車，狀況都還不錯。結果正賽前，13 號車<em class="mark">突然發不動</em>，工作人員圍過去試了幾次都沒反應，時間又一直逼近，最後直接臨陣換成 <em class="mark">8 號車</em> 上場。說真的，這種突發狀況最考驗心臟，車性不一樣、座位感覺不一樣，上去就是硬跑。</p>
+      <p>賽道上也不是在玩的。後車直接頂上去的畫面我拍到好幾張，車尾一扭、輪胎一叫，旁邊看的人比跑的人還緊張。<strong>皺小捷真的超勇</strong>，過彎一路極限超車，該卡的內線一個都沒讓。</p>
+      <p>Q 跑完換棒下來的時候超級認真，滿頭汗、呼吸還很喘，限動也有提到是真的跑累了才換下一棒。我那時候剛好拍到她拉下面罩的表情——那張我私心覺得比任何比 YA 的照片都好看，因為那是真的在拚。</p>
+    </article>
+
+    <div class="panel">
+      <p class="eyebrow" style="margin:0 0 12px">Pit Lane · 正賽前十分鐘</p>
+      <div class="kart-stage">
+        <div class="kart active" id="kart13"><div class="num">13</div><div class="state" id="k13state">排位賽戰車 · 待發動</div></div>
+        <div class="kart" id="kart8"><div class="num">08</div><div class="state" id="k8state">備用車 · 待命中</div></div>
+      </div>
+      <div class="log" id="pitLog"><span>&gt; 維修區待命中…</span></div>
+      <div class="btn-row">
+        <button class="btn solid" id="startBtn">🔑 轉動 13 號車鑰匙</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 回程 -->
+  <section>
+    <div class="sec-head"><span class="sec-no">CH.06</span><h2>回程大雨，跟一整夜的 RAW 檔</h2></div>
+
+    <article class="chapter">
+      <span class="tag">回程與結語</span>
+      <p>回程沒那麼浪漫。大塞車，車陣一路排到看不到頭，開回土城的時候還下起大雨，雨刷開最快還是霧茫茫。但說也奇怪，那時候我一點都不煩，因為記憶卡裡有東西。</p>
+      <p>到家當晚沒睡，直接開電腦把幾百張 RAW 檔全部修完。挑了幾張精選發限動 Tag 女神，剩下那一大包，我打算留到下次一起騎車吃飯的時候再整包奉上——檔案給得太快就沒有下次見面的理由了嘛（欸）。</p>
+      <p>被群組笑說我是「主動型工具人」，我完全認。但我想說的是：一個人開車跑長途真的很爽，沒人在旁邊唧唧歪歪，速度自己掌握，想聽什麼歌就聽什麼歌。而能拍到女神對著鏡頭比 YA 這件事——</p>
+    </article>
+
+    <div class="quote-card">
+      <p>「這相處的感覺，比初戀還好太多了啦。」</p>
+      <p class="by">— 楷哲 · 於彰化回程的雨裡</p>
+    </div>
+  </section>
+
+  <!-- 發文清單 -->
+  <section>
+    <div class="sec-head"><span class="sec-no">CH.07</span><h2>發文前檢查表（小老婆版友專用）</h2></div>
+    <div id="checkList">
+      <label class="check"><input type="checkbox" data-k="c1"><span><strong>封面圖</strong>：Q 換棒時認真的神情，或過彎看鏡頭比手勢的追焦照。</span></label>
+      <label class="check"><input type="checkbox" data-k="c2"><span><strong>賽道圖</strong>：13 號車故障換 8 號車、皺小捷過彎超車、後車頂上去的張力照。</span></label>
+      <label class="check"><input type="checkbox" data-k="c3"><span><strong>側拍照</strong>：小貓在場邊幫忙錄影的畫面。</span></label>
+      <label class="check"><input type="checkbox" data-k="c4"><span><strong>參數表</strong>：1/1000、F5.0、ISO 200、AF-C 附在文末給攝影組。</span></label>
+      <label class="check"><input type="checkbox" data-k="c5"><span><strong>限動 Tag</strong>：精選幾張先發，其餘下次騎車吃飯整包奉上。</span></label>
+    </div>
+  </section>
+
+  <footer>
+    <div class="flagline"></div>
+    楷哲的追昆娜日記 · 彰化卡丁車大賽篇<br>
+    父皇神車 Altis 協力演出 · 200mm 全程無休
+  </footer>
+</div>
+
+<script>
+(function(){
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* 背景泡泡 */
+  var bub = document.getElementById('bubbles');
+  if(bub && !reduce){
+    for(var i=0;i<14;i++){
+      var b = document.createElement('i');
+      var s = 12 + Math.random()*34;
+      b.style.width = s+'px'; b.style.height = s+'px';
+      b.style.left = (Math.random()*100)+'%';
+      b.style.animationDuration = (11 + Math.random()*13)+'s';
+      b.style.animationDelay = (-Math.random()*18)+'s';
+      bub.appendChild(b);
+    }
+  }
+
+  /* 心動指數 */
+  var HEARTS = ['💗','💖','💕','🩷','✨','🏁','📸'];
+  var NOTES = [
+    '嗯…還在暖胎圈。',
+    '心跳開始跟引擎同步了。',
+    '想到那顆 200mm 的畫面了。',
+    '她在賽道上轉頭了……',
+    '比 YA！比 YA！快門按下去！',
+    '爆表。這趟油錢完全值得。'
+  ];
+  var count = 0, MAX = 100;
+  try{ count = parseInt(localStorage.getItem('qh_hearts')||'0',10) || 0; }catch(e){}
+  var fill = document.getElementById('heartFill');
+  var num  = document.getElementById('heartNum');
+  var note = document.getElementById('heartNote');
+  function renderHeart(){
+    var pct = Math.min(100, count);
+    fill.style.width = pct+'%';
+    num.textContent = pct;
+    var idx = Math.min(NOTES.length-1, Math.floor(pct/20));
+    note.innerHTML = '心動值 <span class="heart-count">'+pct+'</span> ／ 100・'+NOTES[idx];
+  }
+  document.getElementById('heartBtn').addEventListener('click', function(ev){
+    count = Math.min(MAX, count + 7);
+    try{ localStorage.setItem('qh_hearts', String(count)); }catch(e){}
+    renderHeart();
+    if(reduce) return;
+    var r = ev.currentTarget.getBoundingClientRect();
+    for(var i=0;i<5;i++){
+      (function(i){
+        var f = document.createElement('div');
+        f.className = 'fly';
+        f.textContent = HEARTS[Math.floor(Math.random()*HEARTS.length)];
+        f.style.left = (r.left + r.width/2 - 11 + (Math.random()*60-30))+'px';
+        f.style.top  = (r.top - 6)+'px';
+        f.style.setProperty('--dx', (Math.random()*90-45)+'px');
+        f.style.setProperty('--rot', (Math.random()*60-30)+'deg');
+        f.style.animationDelay = (i*55)+'ms';
+        document.body.appendChild(f);
+        setTimeout(function(){ f.remove(); }, 1800);
+      })(i);
+    }
+  });
+  renderHeart();
+
+  /* 追焦模擬器 */
+  var SH = [
+    {t:'1/60',  blur:9, freeze:0.10, drama:1.00},
+    {t:'1/125', blur:7, freeze:0.28, drama:0.92},
+    {t:'1/250', blur:5, freeze:0.52, drama:0.80},
+    {t:'1/500', blur:3, freeze:0.74, drama:0.60},
+    {t:'1/1000',blur:1.6,freeze:0.92, drama:0.42},
+    {t:'1/2000',blur:0.4,freeze:0.99, drama:0.16}
+  ];
+  /* stop = 相對於 F2.8 的級數；bokeh = 背景散景模糊；fence = 圍籬搶戲程度 */
+  var AP = [
+    {t:'F2.8', v:2.8, stop:0.0, bokeh:7.0, fence:0.05},
+    {t:'F5.0', v:5.0, stop:1.7, bokeh:4.0, fence:0.16},
+    {t:'F7.1', v:7.1, stop:2.7, bokeh:2.4, fence:0.34},
+    {t:'F9.0', v:9.0, stop:3.4, bokeh:1.4, fence:0.52},
+    {t:'F13',  v:13,  stop:4.4, bokeh:0.6, fence:0.74},
+    {t:'F18',  v:18,  stop:5.4, bokeh:0.1, fence:0.95}
+  ];
+  /* stop = 相對於 ISO100 的級數；grain = 噪點；sat = 色彩掉漆 */
+  var IS = [
+    {t:'ISO 100',   v:100,   stop:0, grain:0.00, sat:1.00},
+    {t:'ISO 200',   v:200,   stop:1, grain:0.06, sat:1.00},
+    {t:'ISO 800',   v:800,   stop:3, grain:0.22, sat:0.92},
+    {t:'ISO 3200',  v:3200,  stop:5, grain:0.45, sat:0.80},
+    {t:'ISO 12800', v:12800, stop:7, grain:0.72, sat:0.62}
+  ];
+
+  var sh = document.getElementById('shutter'), ap = document.getElementById('aperture'), iso = document.getElementById('iso');
+  var shOut = document.getElementById('shutterOut'), apOut = document.getElementById('apertureOut'), isoOut = document.getElementById('isoOut');
+  var vfScene = document.getElementById('vfScene'), vfBg = document.getElementById('vfBg');
+  var vfKart = document.getElementById('vfKart'), vfTag = document.getElementById('vfTag');
+  var vfFence = document.getElementById('vfFence'), vfNoise = document.getElementById('vfNoise');
+  var evOut = document.getElementById('evOut'), evNeedle = document.getElementById('evNeedle');
+  var fxRow = document.getElementById('fxRow'), verdict = document.getElementById('verdict');
+
+  function chip(cls, txt){ return '<span class="chip '+cls+'">'+txt+'</span>'; }
+
+  function renderCam(){
+    var si = +sh.value, ai = +ap.value, ni = +iso.value;
+    var s = SH[si], a = AP[ai], n = IS[ni];
+    shOut.textContent = s.t; apOut.textContent = a.t; isoOut.textContent = n.t;
+
+    /* 曝光：以當天的 1/1000 · F5.0 · ISO200 為基準（彰化大太陽） */
+    var dev = (si - 4) + (a.stop - 1.7) - (n.stop - 1);   /* 正 = 偏暗 */
+    var bright = Math.min(1.65, Math.max(0.38, Math.pow(2, -dev/2.4)));
+    var contrast = Math.max(0.72, 1 - Math.abs(dev)*0.05);
+
+    /* 背景模糊 = 追焦拖影(快門) + 散景(光圈) */
+    var bgBlur = s.blur + a.bokeh * 0.55;
+    vfBg.style.filter = 'blur('+bgBlur.toFixed(2)+'px)';
+    vfBg.style.transform = 'translateX(-'+(s.drama*26)+'px)';
+    vfKart.style.filter = 'drop-shadow(0 6px 6px rgba(0,0,0,.35)) blur('+((1-s.freeze)*4).toFixed(2)+'px)';
+
+    /* 光圈 → 圍籬：開大吃掉圍籬，縮小整片跑出來搶戲 */
+    vfFence.style.opacity = a.fence.toFixed(2);
+    vfFence.style.filter = 'blur('+(a.bokeh*0.8 + 0.4).toFixed(2)+'px)';
+
+    /* ISO → 噪點與掉色；曝光 → 亮度對比 */
+    vfNoise.style.opacity = n.grain.toFixed(2);
+    vfScene.style.filter = 'brightness('+bright.toFixed(2)+') contrast('+contrast.toFixed(2)+') saturate('+n.sat.toFixed(2)+')';
+
+    vfTag.textContent = 'AF-C · 200mm · '+s.t+' · '+a.t+' · '+n.t;
+
+    /* 曝光錶 */
+    var evTxt = (dev > 0 ? '−' : dev < 0 ? '+' : '±') + Math.abs(dev).toFixed(1) + ' EV';
+    evOut.textContent = evTxt;
+    evNeedle.style.left = Math.min(97, Math.max(3, 50 - dev*11)) + '%';
+
+    /* 評分：三個參數各自加減 */
+    var expScore = Math.max(0, 25 - Math.abs(dev)*7);          /* 曝光 25 */
+    var moveScore = s.freeze*28 + s.drama*17;                   /* 快門 45 */
+    var apScore = a.v<=3.5 ? 11 : a.v<=5.6 ? 18 : a.v<=7.5 ? 13 : a.v<=9.5 ? 8 : 3;  /* 光圈 18 */
+    var isoScore = n.v<=200 ? 12 : n.v<=800 ? 8 : n.v<=3200 ? 4 : 1;                 /* ISO 12 */
+    var score = Math.round(expScore + moveScore + apScore + isoScore);
+
+    /* 三顆參數各自一句評語 */
+    var msg;
+    if(s.freeze < 0.35)      msg = '車體糊成一坨，背景流得超帥但主角認不出來是誰——賽道上沒人會感謝你。';
+    else if(s.freeze < 0.7)  msg = '有流動感，但安全帽下的表情糊掉了。比 YA 的那一下會變成一團粉紅色。';
+    else if(s.drama > 0.3)   msg = '這就是甜蜜點：主角銳利、背景拉線，這一張放限動封面剛剛好。';
+    else                     msg = '定格得太乾淨，看起來像停在那邊拍寫真，速度感全沒了。';
+
+    if(a.v <= 3.5)      msg += ' 光圈開到底，散景是很爽，但 200mm 景深薄到剩一層紙，她一動就脫焦。';
+    else if(a.v <= 5.6) msg += ' F5.0 是這顆 200mm 的甜蜜點：背景化開，賽道邊的圍籬整片消失。';
+    else if(a.v <= 9.5) msg += ' 光圈開始縮了，圍籬的網格慢慢浮出來，背景有點吵。';
+    else                msg += ' 光圈縮太小，散景沒了，賽道邊的圍籬整片亂入，主角被網子蓋住。';
+
+    if(n.v <= 200)      msg += ' ISO 壓在低檔，畫質乾淨，晚上修圖會很感謝自己。';
+    else if(n.v <= 800) msg += ' ISO 800 還在可接受範圍，暗部稍微有一點顆粒。';
+    else if(n.v <= 3200)msg += ' ISO 爆高，暗部噪點會讓你修圖修到天亮。';
+    else                msg += ' ISO 12800，整張像下雪，粉紅色都掉成灰的了。';
+
+    if(dev > 1.2)       msg += ' 而且整張欠曝 '+dev.toFixed(1)+' 級，拉回來噪點會更慘。';
+    else if(dev < -1.2) msg += ' 而且過曝 '+Math.abs(dev).toFixed(1)+' 級，安全帽的白已經死白救不回來。';
+
+    /* 狀態小標籤 */
+    var chips = '';
+    chips += chip(s.freeze>=0.85 ? 'good' : s.freeze>=0.6 ? 'warn' : 'bad', '主體 ' + (s.freeze>=0.85?'銳利':s.freeze>=0.6?'微糊':'糊掉'));
+    chips += chip(s.drama>=0.3 && s.freeze>=0.7 ? 'good' : 'warn', '背景拉線 ' + Math.round(s.drama*100) + '%');
+    chips += chip(a.fence<=0.2 ? 'good' : a.fence<=0.55 ? 'warn' : 'bad', '圍籬 ' + (a.fence<=0.2?'吃掉':a.fence<=0.55?'微現':'整片亂入'));
+    chips += chip(a.v<=3.5 ? 'warn' : a.v<=5.6 ? 'good' : 'warn', '景深 ' + (a.v<=3.5?'薄如紙':a.v<=5.6?'剛好':'偏厚'));
+    chips += chip(n.grain<=0.1 ? 'good' : n.grain<=0.3 ? 'warn' : 'bad', '噪點 ' + Math.round(n.grain*100) + '%');
+    chips += chip(Math.abs(dev)<=0.8 ? 'good' : Math.abs(dev)<=2 ? 'warn' : 'bad', dev>0.2 ? '欠曝' : dev<-0.2 ? '過曝' : '曝光正常');
+    fxRow.innerHTML = chips;
+
+    verdict.innerHTML = '<b>追焦評分 '+score+' / 100</b><br>'+msg;
+  }
+  [sh,ap,iso].forEach(function(el){ el.addEventListener('input', renderCam); });
+  document.getElementById('useKaizhe').addEventListener('click', function(){
+    sh.value = 4; ap.value = 1; iso.value = 1; renderCam();
+    verdict.innerHTML = '<b>楷哲當天的設定 · 1/1000 · F5.0 · ISO 200 · AF-C</b><br>就是這組，把她對著鏡頭比 YA 的那一格穩穩咬住。';
+  });
+  document.getElementById('randomSet').addEventListener('click', function(){
+    sh.value = Math.floor(Math.random()*6);
+    ap.value = Math.floor(Math.random()*6);
+    iso.value = Math.floor(Math.random()*5);
+    renderCam();
+  });
+  renderCam();
+
+  /* 換車 */
+  var tries = 0, swapped = false;
+  var k13 = document.getElementById('kart13'), k8 = document.getElementById('kart8');
+  var k13s = document.getElementById('k13state'), k8s = document.getElementById('k8state');
+  var pitLog = document.getElementById('pitLog'), startBtn = document.getElementById('startBtn');
+  function logLine(t){
+    var l = document.createElement('span');
+    l.textContent = '> ' + t;
+    pitLog.appendChild(l);
+    while(pitLog.children.length > 4) pitLog.removeChild(pitLog.firstChild);
+  }
+  startBtn.addEventListener('click', function(){
+    if(swapped){
+      k8.classList.add('shake');
+      setTimeout(function(){ k8.classList.remove('shake'); }, 400);
+      logLine('8 號車狀況良好，準備出場。');
+      return;
+    }
+    tries++;
+    k13.classList.add('shake');
+    setTimeout(function(){ k13.classList.remove('shake'); }, 400);
+    if(tries === 1){ logLine('咳…咳…（沒有反應）'); k13s.textContent = '嘗試發動 1 次 · 無反應'; }
+    else if(tries === 2){ logLine('咳咳咳…引擎還是沒點著。'); k13s.textContent = '嘗試發動 2 次 · 無反應'; }
+    else {
+      swapped = true;
+      k13.classList.remove('active'); k13.classList.add('dead');
+      k13s.textContent = '正賽前故障 · 退出';
+      k8.classList.add('active');
+      k8s.textContent = '臨陣上陣 · 引擎已啟動';
+      logLine('13 號車宣告陣亡，緊急換 8 號車！');
+      logLine('8 號車 — 轟！引擎聲出來了，Q 上車，正賽開始。');
+      startBtn.textContent = '🏁 8 號車已就緒';
+      if(!reduce){
+        for(var i=0;i<8;i++){
+          (function(i){
+            var r = k8.getBoundingClientRect();
+            var f = document.createElement('div');
+            f.className = 'fly';
+            f.textContent = i%2 ? '🏁' : '💗';
+            f.style.left = (r.left + r.width/2 + (Math.random()*70-35))+'px';
+            f.style.top  = (r.top + 10)+'px';
+            f.style.setProperty('--dx', (Math.random()*100-50)+'px');
+            f.style.setProperty('--rot', (Math.random()*80-40)+'deg');
+            f.style.animationDelay = (i*50)+'ms';
+            document.body.appendChild(f);
+            setTimeout(function(){ f.remove(); }, 1800);
+          })(i);
+        }
+      }
+    }
+  });
+
+  /* 底片收集 */
+  var SHOTS = [
+    {e:'🏎️', c:'入彎前的直線，車頭壓得很低——背景剛好拉出漂亮的流線。'},
+    {e:'✌️', c:'就是這張！她對著 200mm 比 YA，眼神有對到。連拍第 3 格，一整天就在等這一下。'},
+    {e:'😤', c:'換棒下來的認真表情，滿頭汗，面罩剛拉起來。私心最愛的一張。'},
+    {e:'💥', c:'後車直接頂上去，車尾一扭，旁邊看的人比跑的人還緊張。'},
+    {e:'🌀', c:'皺小捷極限過彎超車，內線一個都沒讓，勇到不行。'},
+    {e:'🔧', c:'13 號車趴在維修區，工作人員圍著它搖頭的畫面。'},
+    {e:'🎥', c:'小貓在場邊幫忙錄影的側拍，這種幕後畫面之後一定要放。'},
+    {e:'🏁', c:'格子旗揮下的瞬間，快門連按到手指發麻。'},
+    {e:'🌧️', c:'回程土城的大雨，雨刷開最快還是霧茫茫——但記憶卡裡有東西，心情超好。'}
+  ];
+  var strip = document.getElementById('filmStrip');
+  var capBox = document.getElementById('captionBox');
+  var flash = document.getElementById('flash');
+  var shotIdx = 0, order = [];
+  function buildFilm(){
+    strip.innerHTML = '';
+    shotIdx = 0;
+    order = SHOTS.map(function(s,i){ return i; });
+    for(var i=order.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=order[i]; order[i]=order[j]; order[j]=t; }
+    for(var k=0;k<9;k++){
+      var f = document.createElement('div');
+      f.className = 'frame';
+      f.innerHTML = '<span>·</span><small>'+String(k+1).padStart(2,'0')+'</small>';
+      strip.appendChild(f);
+    }
+    capBox.textContent = '底片還是空的，按下快門開始連拍。';
+    document.getElementById('shootBtn').disabled = false;
+  }
+  document.getElementById('shootBtn').addEventListener('click', function(){
+    if(shotIdx >= 9){ capBox.textContent = '這捲拍完了，回家修 RAW 吧。要繼續就換一捲底片。'; return; }
+    var s = SHOTS[order[shotIdx]];
+    var f = strip.children[shotIdx];
+    f.classList.add('shot');
+    f.querySelector('span').textContent = s.e;
+    capBox.textContent = '第 '+String(shotIdx+1).padStart(2,'0')+' 格 — '+s.c;
+    shotIdx++;
+    if(!reduce){ flash.classList.remove('on'); void flash.offsetWidth; flash.classList.add('on'); }
+    if(shotIdx === 9){
+      setTimeout(function(){ capBox.textContent = '九格拍完，記憶卡塞滿。今晚又是熬夜修 RAW 的一夜——但值得。'; }, 1400);
+    }
+  });
+  document.getElementById('resetFilm').addEventListener('click', buildFilm);
+  buildFilm();
+
+  /* 檢查清單 */
+  var boxes = document.querySelectorAll('#checkList input');
+  Array.prototype.forEach.call(boxes, function(b){
+    var key = 'qh_'+b.dataset.k;
+    try{ if(localStorage.getItem(key)==='1'){ b.checked = true; } }catch(e){}
+    if(b.checked) b.closest('.check').classList.add('done');
+    b.addEventListener('change', function(){
+      b.closest('.check').classList.toggle('done', b.checked);
+      try{ localStorage.setItem(key, b.checked ? '1' : '0'); }catch(e){}
+    });
+  });
+})();
+</script>
