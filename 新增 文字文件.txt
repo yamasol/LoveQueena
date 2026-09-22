@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>中秋一日遊 互動決策小幫手 🌕✨</title>
+    <style>
+        :root {
+            --bg-color: #fdfaf6;
+            --card-bg: #ffffff;
+            --primary-color: #ff8b94;
+            --primary-hover: #ff737d;
+            --text-color: #4a3e3d;
+            --accent-color: #ffe066;
+            --secondary-bg: #f8efe6;
+            --shadow-color: rgba(188, 156, 140, 0.18);
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "微軟正黑體", sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 16px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            border-radius: 24px;
+            box-shadow: 0 8px 20px var(--shadow-color);
+            padding: 24px 20px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+            border: 2px solid #f3e5d8;
+        }
+
+        .title {
+            font-size: 1.5rem;
+            color: #d85a4e;
+            margin-bottom: 6px;
+            font-weight: 800;
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            color: #8c7365;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background-color: #f0e6df;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 33%;
+            background-color: var(--primary-color);
+            transition: width 0.3s ease;
+        }
+
+        .question-card {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .question-card.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .question-title {
+            font-size: 1.15rem;
+            margin-bottom: 18px;
+            font-weight: bold;
+            color: #5c473a;
+            text-align: left;
+        }
+
+        .btn-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .btn-option {
+            background-color: var(--secondary-bg);
+            border: 2px solid transparent;
+            color: var(--text-color);
+            padding: 16px 18px;
+            border-radius: 18px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-weight: 700;
+            width: 100%;
+        }
+
+        .btn-option:active {
+            background-color: #ffd8cc;
+            transform: scale(0.98);
+        }
+
+        .btn-option .icon {
+            font-size: 1.3rem;
+            margin-left: 8px;
+        }
+
+        /* Result Area */
+        .result-card {
+            display: none;
+            text-align: left;
+            animation: fadeIn 0.4s ease-in-out;
+        }
+
+        .result-header {
+            background-color: #fff4eb;
+            border-radius: 18px;
+            padding: 18px;
+            border-left: 5px solid var(--primary-color);
+            margin-bottom: 18px;
+        }
+
+        .result-title {
+            font-size: 1.3rem;
+            color: #d85a4e;
+            margin: 0 0 6px 0;
+            font-weight: bold;
+        }
+
+        .result-tag {
+            display: inline-block;
+            background-color: var(--accent-color);
+            color: #594511;
+            padding: 3px 10px;
+            border-radius: 16px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .itinerary-box {
+            background: #faf6f0;
+            border-radius: 16px;
+            padding: 18px;
+            margin-bottom: 16px;
+        }
+
+        .itinerary-title {
+            font-weight: bold;
+            color: #6b5244;
+            margin-bottom: 12px;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .timeline {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .timeline li {
+            padding-left: 18px;
+            position: relative;
+            margin-bottom: 10px;
+            line-height: 1.5;
+            font-size: 0.9rem;
+        }
+
+        .timeline li::before {
+            content: '•';
+            position: absolute;
+            left: 2px;
+            color: var(--primary-color);
+            font-size: 1.3rem;
+            line-height: 1;
+        }
+
+        .photo-spot {
+            background-color: #f0f7ec;
+            border-radius: 16px;
+            padding: 16px;
+            border: 1px dashed #7fa675;
+            margin-bottom: 20px;
+        }
+
+        .photo-title {
+            color: #355e2d;
+            font-weight: bold;
+            margin-bottom: 6px;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .cafe-badge {
+            background-color: #e8d5c4;
+            color: #543d2b;
+            padding: 2px 6px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-left: 4px;
+        }
+
+        .btn-reset {
+            background-color: #a3978c;
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            border-radius: 14px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: background 0.2s;
+            text-align: center;
+        }
+
+        .btn-reset:active {
+            background-color: #877b70;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="title">🌕 中秋一日遊決策 ☕</div>
+    <div class="subtitle">專屬手機版選單，快速找到你們的最佳行程！</div>
+
+    <div class="progress-bar">
+        <div class="progress-fill" id="progress"></div>
+    </div>
+
+    <!-- Q1 -->
+    <div class="question-card active" id="q1">
+        <div class="question-title">1. 先看看當天的天氣情況？</div>
+        <div class="btn-grid">
+            <button class="btn-option" onclick="nextQuestion(1, 'rain')">
+                <span>☔ 天公不作美 / 下雨暴雨</span>
+                <span class="icon">🌧️</span>
+            </button>
+            <button class="btn-option" onclick="nextQuestion(1, 'sunny')">
+                <span>☀️ 天氣晴朗 / 陰天無雨</span>
+                <span class="icon">🌤️</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Q2 -->
+    <div class="question-card" id="q2">
+        <div class="question-title">2. 今天成員想不想走路運動流汗？</div>
+        <div class="btn-grid">
+            <button class="btn-option" onclick="nextQuestion(2, 'hike')">
+                <span>🏃 想！體力充沛，想踏青爬山</span>
+                <span class="icon">⛰️</span>
+            </button>
+            <button class="btn-option" onclick="nextQuestion(2, 'chill')">
+                <span>🛵 不想！想輕鬆開車跑山、兜風看景</span>
+                <span class="icon">🚗</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Q3-A (Hike path) -->
+    <div class="question-card" id="q3-hike">
+        <div class="question-title">3. 爬山踏青，你們怕不怕太陽曬/天氣太熱？</div>
+        <div class="btn-grid">
+            <button class="btn-option" onclick="showResult(2)">
+                <span>🌲 超怕熱！想找山林涼爽遮蔭避暑</span>
+                <span class="icon">🍃</span>
+            </button>
+            <button class="btn-option" onclick="showResult(3)">
+                <span>🌾 不怕熱！為了絕美海景草原我可以！</span>
+                <span class="icon">🌊</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Q3-B (Chill path) -->
+    <div class="question-card" id="q3-chill">
+        <div class="question-title">3. 輕鬆兜風看景，最想看到哪種風景？</div>
+        <div class="btn-grid">
+            <button class="btn-option" onclick="showResult(1)">
+                <span>🌊 藍天大海 + 甜點與海景咖啡館放空</span>
+                <span class="icon">🍰</span>
+            </button>
+            <button class="btn-option" onclick="showResult(4)">
+                <span>🏮 壯麗山海交界 + 寂寞公路與山城茶館</span>
+                <span class="icon">📸</span>
+            </button>
+            <button class="btn-option" onclick="showResult(5)">
+                <span>🍑 高海拔涼爽山區 + 景觀咖啡與水蜜桃冰</span>
+                <span class="icon">🧊</span>
+            </button>
+            <button class="btn-option" onclick="showResult(6)">
+                <span>♨️ 跑山樂趣 + 宜蘭美食與頭城海景咖啡</span>
+                <span class="icon">🏍️</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Result Area -->
+    <div class="result-card" id="result">
+        <div class="result-header">
+            <div class="result-tag" id="res-tag">中秋推薦行程</div>
+            <h2 class="result-title" id="res-title">行程名稱</h2>
+            <div id="res-desc" style="color: #614e44; font-size: 0.9rem;">行程簡介</div>
+        </div>
+
+        <div class="itinerary-box">
+            <div class="itinerary-title">🕒 一日安排（含咖啡休息時段）</div>
+            <ul class="timeline" id="res-timeline">
+                <!-- Timeline via JS -->
+            </ul>
+        </div>
+
+        <div class="photo-spot">
+            <div class="photo-title">📷 單眼相機控拍照亮點</div>
+            <div id="res-photo" style="color: #3b5934; font-size: 0.88rem; line-height: 1.5;">攝影建議</div>
+        </div>
+
+        <button class="btn-reset" onclick="resetQuiz()">🔄 重新選擇</button>
+    </div>
+</div>
+
+<script>
+    const data = {
+        1: {
+            title: "【選項 1】北海岸海風甜點慢活之旅 🌊",
+            tag: "海景咖啡 / 吃蛋糕 / 隨性漫遊",
+            desc: "北海岸繞一圈，看大海放空、吃甜點，隨性自在的輕旅行。",
+            timeline: [
+                "<b>10:30</b> 出發往萬里/金山方向，沿途海岸線兜風",
+                "<b>12:00</b> 金山老街美味午餐，採買在地甜點/蛋糕伴手禮",
+                "<b>14:00</b> 雙燭台嶼 / 神秘海岸散步看海（見機行事）",
+                "<b>15:30</b> <span class='cafe-badge'>☕ 咖啡時間</span> 石門/三芝沿海選一家海景咖啡店，悠閒下午茶放空",
+                "<b>18:00</b> 淡水夕陽伴隨返程，或夜市享用小吃"
+            ],
+            photo: "<b>石門洞天然拱門</b>框景；<b>雙燭台嶼</b>長焦壓縮海浪感；<b>神秘海岸</b>多層次岩石紋理與夕陽光影。"
+        },
+        2: {
+            title: "【選項 2】陽明山綠意避暑與山中咖啡 🌲",
+            tag: "森林步道 / 山中避暑 / 靜謐咖啡",
+            desc: "山上氣溫較涼爽，到陽明山森林步道散步吸芬多精，享受山中涼爽咖啡館。",
+            timeline: [
+                "<b>10:00</b> 上陽明山，前往竹子湖或二子坪步道輕鬆散步",
+                "<b>12:30</b> 竹子湖野菜餐廳享用山產與熱湯",
+                "<b>14:30</b> <span class='cafe-badge'>☕ 咖啡時間</span> 山中挑一家隱密景觀咖啡店避暑喝咖啡、聊天休息",
+                "<b>17:30</b> 下山前往士林享用晚餐，或至觀景台欣賞台北夜景"
+            ],
+            photo: "<b>小油坑</b>硫磺煙霧；<b>黑森林</b>樹海逆光光斑（夢幻氛圍）；<b>冷水坑吊橋</b>幾何線條與人像縱深。"
+        },
+        3: {
+            title: "【選項 3】桃源谷大草原絕美海景征服之旅 🌾",
+            tag: "壯麗大草原 / 遠眺龜山島 / 戶外健行",
+            desc: "挑戰一點點步道，換來360度大草原與無敵海景的視覺震撼！",
+            timeline: [
+                "<b>08:30</b> 提早出發往貢寮，避開正午酷熱",
+                "<b>10:00</b> 抵達桃源谷內寮線入口（親民路線），開啟健行",
+                "<b>11:30</b> 登頂桃源谷大草原，野餐看海遠眺龜山島",
+                "<b>14:00</b> 順步道下山，前往大溪漁港享用現撈海鮮",
+                "<b>16:00</b> <span class='cafe-badge'>☕ 咖啡時間</span> 頭城海邊挑一家咖啡館休息放鬆雙腿"
+            ],
+            photo: "<b>大草原廣角特寫</b>（國外既視感）；<b>長焦鏡頭</b>捕捉遠處龜山島與草原牛群；頂峰稜線延伸感。"
+        },
+        4: {
+            title: "【選項 4】九份金瓜石 + 寂寞公路巡禮 🏮",
+            tag: "攝影聖地 / 寂寞公路 / 復古山城",
+            desc: "免大步走路就能看山海！直達不厭亭欣賞寂寞公路，感受金九山城魅力。",
+            timeline: [
+                "<b>11:00</b> 直達雙溪與瑞芳交界「不厭亭」，遠眺寂寞公路",
+                "<b>12:30</b> 金瓜石 / 水湳洞周邊特色小餐館享用午餐",
+                "<b>14:30</b> <span class='cafe-badge'>☕ 咖啡時間</span> 九份老街海景咖啡館或經典茶館品茶歇息",
+                "<b>16:30</b> 漫步九份山城，等候夕陽落山與燈籠點亮",
+                "<b>18:30</b> 欣賞九份夜景後返程"
+            ],
+            photo: "<b>單眼狂必拍！</b>不厭亭<b>「寂寞公路」</b>延伸；水湳洞<b>陰陽海</b>對比色；<b>阿妹茶樓</b>紅燈籠人文夜景。"
+        },
+        5: {
+            title: "【選項 5】桃園拉拉山高山避暑 + 水蜜桃冰盛宴 🍑",
+            tag: "高山冷氣 / 神木群 / 水蜜桃甜點",
+            desc: "衝上高海拔拉拉山享受天然冷氣，喝爆水蜜桃冰沙，高山芬多精滿滿！",
+            timeline: [
+                "<b>09:00</b> 出發前往桃園拉拉山，享受沿途山路景色",
+                "<b>11:30</b> 抵達拉拉山巨木區步道，千年神木群漫步消暑",
+                "<b>13:30</b> 上巴陵原住民風味餐廳享用午餐",
+                "<b>14:30</b> <span class='cafe-badge'>☕ 咖啡時間</span> 高山景觀咖啡店，享用當季水蜜桃冰沙與咖啡",
+                "<b>16:30</b> 下山返程，沿途選購新鮮高山蔬果"
+            ],
+            photo: "<b>拉拉山巨木群</b>垂直廣角氣勢；高山茶園雲霧繚繞感；<b>水蜜桃冰沙特寫</b>大光圈散景。"
+        },
+        6: {
+            title: "【選項 6】北宜公路跑山 + 礁溪頭城海邊樂活 ♨️",
+            tag: "駕駛樂活 / 龜山島海景 / 溫泉美食",
+            desc: "享受跑山過彎樂趣，俯瞰蘭陽平原，再到頭城看海、礁溪泡湯吃美食！",
+            timeline: [
+                "<b>09:30</b> 走北宜公路享受跑山與沿途景色",
+                "<b>11:00</b> 停靠北宜觀景台，俯瞰九彎十八拐與蘭陽平原",
+                "<b>12:30</b> 抵達頭城享用麻醬麵蛤蜊湯或海鮮小吃",
+                "<b>14:30</b> <span class='cafe-badge'>☕ 咖啡時間</span> 外澳海灣看衝浪人潮、海邊咖啡館喝下午茶",
+                "<b>17:30</b> 礁溪享用櫻桃鴨，泡腳/泡湯後滿足返家"
+            ],
+            photo: "<b>北宜61k/68k觀景台</b>俯瞰平原縱深；<b>外澳海灘</b>龜山島海浪壓縮感；渭水之丘建築幾何。"
+        },
+        7: {
+            title: "【選項 7】室內閱讀文青慢活 + 誠品松菸散策 📚",
+            tag: "室內避雨 / 質感書店 / 咖啡選品",
+            desc: "天氣不好也不掃興！質感誠品松菸/南西店，看書選品、喝咖啡過個浪漫文青日。",
+            timeline: [
+                "<b>11:30</b> 睡飽出發前往誠品松菸店（或誠品南西店）",
+                "<b>12:00</b> 室內特色餐廳享用質感早午餐",
+                "<b>13:30</b> 逛誠品書店選書、漫遊選品店與展覽",
+                "<b>15:30</b> <span class='cafe-badge'>☕ 咖啡時間</span> 書店旁手沖咖啡館，沉浸閱讀與聊天時光",
+                "<b>18:30</b> 周邊巷弄質感餐廳享用晚餐"
+            ],
+            photo: "<b>書店書架建築幾何結構</b>；室內大光圈光影細節；文青風格<b>街頭人文側拍</b>與咖啡特寫。"
+        }
+    };
+
+    function updateProgress(percent) {
+        document.getElementById('progress').style.width = percent + '%';
+    }
+
+    function nextQuestion(currentQ, answer) {
+        document.getElementById(`q${currentQ}`).classList.remove('active');
+
+        if (currentQ === 1) {
+            if (answer === 'rain') {
+                showResult(7);
+            } else {
+                document.getElementById('q2').classList.add('active');
+                updateProgress(66);
+            }
+        } else if (currentQ === 2) {
+            if (answer === 'hike') {
+                document.getElementById('q3-hike').classList.add('active');
+            } else {
+                document.getElementById('q3-chill').classList.add('active');
+            }
+            updateProgress(90);
+        }
+    }
+
+    function showResult(optionId) {
+        const cards = document.querySelectorAll('.question-card');
+        cards.forEach(card => card.classList.remove('active'));
+
+        const res = data[optionId];
+        document.getElementById('res-title').innerText = res.title;
+        document.getElementById('res-tag').innerText = res.tag;
+        document.getElementById('res-desc').innerText = res.desc;
+        document.getElementById('res-photo').innerHTML = res.photo;
+
+        const timelineList = document.getElementById('res-timeline');
+        timelineList.innerHTML = '';
+        res.timeline.forEach(item => {
+            const li = document.createElement('li');
+            li.innerHTML = item;
+            timelineList.appendChild(li);
+        });
+
+        document.getElementById('result').style.display = 'block';
+        updateProgress(100);
+    }
+
+    function resetQuiz() {
+        document.getElementById('result').style.display = 'none';
+        const cards = document.querySelectorAll('.question-card');
+        cards.forEach(card => card.classList.remove('active'));
+
+        document.getElementById('q1').classList.add('active');
+        updateProgress(33);
+    }
+</script>
+</body>
+</html>
