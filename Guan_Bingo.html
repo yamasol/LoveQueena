@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>關聖帝君線上擲筊求籤</title>
+  <style>
+    :root {
+      --gold: #f39c12;
+      --gold-bright: #ffeaa7;
+      --gold-deep: #b9770e;
+      --red: #c0392b;
+      --jade: #2ecc71;
+      --card-bg: #1a0c0c;
+    }
+
+    * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      margin: 0;
+      padding: 20px 16px;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: "PingFang TC", "Microsoft JhengHei", sans-serif;
+      color: #fff;
+      background: radial-gradient(ellipse at 50% 0%, #3a1408 0%, #140606 45%, #050202 100%);
+      background-color: #0a0505;
+      overflow-x: hidden;
+    }
+
+    /* 粒子特效畫布（香火餘燼、金光、彩帶） */
+    #fx { position: fixed; inset: 0; pointer-events: none; z-index: 20; }
+
+    /* 全螢幕閃光 */
+    #flash {
+      position: fixed; inset: 0; pointer-events: none; z-index: 30; opacity: 0;
+      background: radial-gradient(circle at 50% 45%, #fffbe6 0%, #ffd54f 35%, rgba(243,156,18,0) 75%);
+    }
+    #flash.go { animation: flash 1.2s ease-out; }
+    @keyframes flash { 0% { opacity: 0; } 8% { opacity: 1; } 100% { opacity: 0; } }
+
+    /* ===== 主卡片 ===== */
+    .temple-card {
+      position: relative;
+      width: 100%;
+      max-width: 520px;
+      border: 2px solid var(--gold);
+      border-radius: 16px;
+      overflow: hidden;
+      background-color: var(--card-bg);
+      box-shadow: 0 0 30px rgba(243,156,18,.3), inset 0 0 40px rgba(0,0,0,.6);
+      transition: box-shadow .6s ease;
+    }
+    .temple-card.blessed { box-shadow: 0 0 60px rgba(255,215,0,.6), 0 0 120px rgba(243,156,18,.35); }
+    .temple-card.shake { animation: shake .5s; }
+    @keyframes shake {
+      0%,100% { transform: translate(0); }
+      20% { transform: translate(-6px, 2px); }
+      40% { transform: translate(5px, -3px); }
+      60% { transform: translate(-4px, 3px); }
+      80% { transform: translate(3px, -2px); }
+    }
+
+    .sound-btn {
+      position: absolute; top: 10px; right: 10px; z-index: 4;
+      width: 38px; height: 38px; border-radius: 50%;
+      border: 1px solid rgba(243,156,18,.6); background: rgba(0,0,0,.5);
+      color: var(--gold-bright); font-size: 1.1rem; cursor: pointer;
+    }
+
+    /* 神像：緩慢推近 + 神光 */
+    .god-wrap { position: relative; height: 250px; overflow: hidden; }
+    .god-image {
+      position: absolute; inset: -4%;
+      background-size: cover; background-position: center top;
+      animation: kenburns 18s ease-in-out infinite alternate;
+      transition: filter .8s ease;
+    }
+    .god-image.glow { filter: brightness(1.35) saturate(1.25); }
+    .god-image.fallback {
+      background: radial-gradient(circle at 50% 40%, #8e2a12, #2a0a05 70%);
+      display: grid; place-items: center;
+    }
+    .god-image.fallback::before {
+      content: '關'; font-size: 140px; font-weight: 900; color: var(--gold);
+      text-shadow: 0 0 30px rgba(255,200,0,.7);
+    }
+    @keyframes kenburns {
+      from { transform: scale(1) translateY(0); }
+      to   { transform: scale(1.12) translateY(-8px); }
+    }
+    .halo {
+      position: absolute; left: 50%; top: 40%;
+      width: 460px; height: 460px; margin: -230px 0 0 -230px; border-radius: 50%;
+      background: repeating-conic-gradient(from 0deg, rgba(255,215,0,.22) 0deg 6deg, transparent 6deg 18deg);
+      -webkit-mask: radial-gradient(circle, #000 15%, transparent 68%);
+              mask: radial-gradient(circle, #000 15%, transparent 68%);
+      mix-blend-mode: screen; opacity: .25;
+      animation: spin 40s linear infinite;
+      transition: opacity .8s ease;
+      pointer-events: none;
+    }
+    .halo.on { opacity: 1; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .god-wrap::after {
+      content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 60%;
+      background: linear-gradient(to bottom, rgba(26,12,12,0), rgba(26,12,12,1));
+    }
+
+    .content { padding: 0 22px 22px; text-align: center; position: relative; z-index: 1; }
+
+    h1 {
+      margin: -22px 0 4px; font-size: 1.8rem; letter-spacing: 2px;
+      background: linear-gradient(180deg, #fff6d5, #f7c948 50%, #d68910);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,.9));
+    }
+    .subtitle { color: #bbb; font-size: .85rem; margin: 0 0 12px; }
+
+    /* 連續聖筊燈 */
+    .streak { display: flex; justify-content: center; align-items: center; gap: 8px; font-size: .8rem; color: #c9a36a; }
+    .lamp {
+      width: 14px; height: 14px; border-radius: 50%;
+      border: 1px solid var(--gold); background: rgba(243,156,18,.08);
+      transition: all .4s ease;
+    }
+    .lamp.lit {
+      background: radial-gradient(circle at 40% 35%, #fff8dc, #f7c948 45%, #d35400);
+      box-shadow: 0 0 10px #ffcc33, 0 0 20px rgba(255,160,0,.6);
+      transform: scale(1.15);
+    }
+
+    /* 擲筊舞台 */
+    .bwa-stage {
+      display: flex; justify-content: center; align-items: flex-end; gap: 36px;
+      height: 120px; padding-bottom: 16px; margin: 4px 0; cursor: pointer;
+    }
+    .bwa-slot { position: relative; }
+    .bwa {
+      position: relative; z-index: 1;
+      width: 80px; height: 40px;
+      background: linear-gradient(135deg, #e74c3c, #962d22);
+      border: 2px solid #ff7675;
+      box-shadow: 0 4px 10px rgba(0,0,0,.5), inset 0 -6px 12px rgba(0,0,0,.25);
+      will-change: transform;
+    }
+    .bwa.convex { border-radius: 0 0 80px 80px; border-top: 4px solid #50110a; }
+    .bwa.flat {
+      border-radius: 80px 80px 0 0; border-bottom: 4px solid #50110a;
+      background: linear-gradient(135deg, #d63031, #7d1a1a);
+    }
+    .shadow {
+      position: absolute; left: 10%; right: 10%; bottom: -10px; height: 10px; border-radius: 50%;
+      background: radial-gradient(ellipse, rgba(0,0,0,.7), transparent 70%);
+      transition: transform .3s, opacity .3s;
+    }
+    .bwa-stage.flying .shadow { transform: scale(.45); opacity: .35; }
+
+    .controls { display: flex; justify-content: center; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .toss-btn {
+      position: relative; overflow: hidden;
+      background: linear-gradient(135deg, #f39c12, #d35400);
+      color: #fff; border: none; padding: 12px 40px;
+      font-size: 1.1rem; font-weight: bold; letter-spacing: 2px;
+      border-radius: 30px; cursor: pointer;
+      box-shadow: 0 4px 15px rgba(243,156,18,.4);
+      transition: transform .2s ease, box-shadow .2s ease;
+      animation: breathe 2.4s ease-in-out infinite;
+    }
+    .toss-btn::after {
+      content: ''; position: absolute; top: 0; left: -60%; width: 40%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.45), transparent);
+      transform: skewX(-20deg); animation: shine 3s ease-in-out infinite;
+    }
+    @keyframes breathe { 50% { box-shadow: 0 4px 26px rgba(255,190,40,.75); } }
+    @keyframes shine { 0%, 60% { left: -60%; } 100% { left: 130%; } }
+    .toss-btn:hover { transform: scale(1.05); }
+    .toss-btn:active { transform: scale(.96); }
+    .toss-btn:disabled { background: #555; cursor: not-allowed; transform: none; box-shadow: none; animation: none; }
+    .toss-btn:disabled::after { display: none; }
+
+    .stars-select { font-size: .85rem; color: #c9a36a; }
+    .stars-select select {
+      background: #2a1410; color: var(--gold-bright); border: 1px solid var(--gold);
+      border-radius: 8px; padding: 4px 6px; font-size: .9rem;
+    }
+    .key-hint { font-size: .72rem; color: #7d6650; margin-top: 6px; }
+
+    .result-status { font-size: 1.3rem; font-weight: bold; margin: 14px 0 4px; min-height: 1.6em; }
+    .result-status.pop { animation: statusPop .45s cubic-bezier(.175,.885,.32,1.275); }
+    @keyframes statusPop { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .streak-hint { font-size: .82rem; color: var(--gold-bright); min-height: 1.2em; margin-bottom: 6px; }
+
+    .mode-tag {
+      display: inline-block; font-size: .85rem; padding: 3px 10px; border-radius: 12px;
+      background: rgba(243,156,18,.2); color: var(--gold-bright); border: 1px solid var(--gold);
+      margin-bottom: 8px;
+    }
+    .response-box {
+      background: rgba(0,0,0,.4); border-left: 3px solid var(--gold);
+      padding: 10px 15px; margin: 10px 0; font-size: .95rem; color: #e0e0e0;
+      line-height: 1.6; text-align: left; min-height: 50px; border-radius: 0 8px 8px 0;
+    }
+
+    /* 開運號碼球 */
+    .numbers-title { font-size: .85rem; color: #c9a36a; margin-top: 14px; }
+    .number-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 10px; }
+    .ball {
+      width: 46px; height: 46px; border-radius: 50%;
+      display: grid; place-items: center;
+      font-size: 1.15rem; font-weight: 800; color: #3b1a00;
+      background: radial-gradient(circle at 35% 30%, #fffbe6, #f7c948 40%, #b9770e 100%);
+      box-shadow: 0 4px 10px rgba(0,0,0,.5), 0 0 12px rgba(255,200,0,.35);
+      animation: ballIn .55s cubic-bezier(.175,.885,.32,1.275) both;
+    }
+    .ball.super {
+      color: #fff;
+      background: radial-gradient(circle at 35% 30%, #fff, #ff7675 40%, #8e0000 100%);
+      box-shadow: 0 0 16px #ff4d4d, 0 0 26px rgba(255,215,0,.7);
+    }
+    @keyframes ballIn {
+      from { opacity: 0; transform: translateY(-30px) scale(.3) rotate(-180deg); }
+      to   { opacity: 1; transform: none; }
+    }
+    .copy-btn, .ghost-btn {
+      margin-top: 12px; background: transparent; color: var(--gold-bright);
+      border: 1px solid var(--gold); border-radius: 20px; padding: 6px 16px;
+      font-size: .85rem; cursor: pointer;
+    }
+    .copy-btn:hover, .ghost-btn:hover { background: rgba(243,156,18,.15); }
+
+    /* 擲筊紀錄 */
+    .history { margin-top: 16px; padding-top: 12px; border-top: 1px dashed rgba(243,156,18,.3); }
+    .history-stats { font-size: .78rem; color: #8d7660; margin-bottom: 6px; }
+    .chips { display: flex; justify-content: center; gap: 5px; flex-wrap: wrap; min-height: 24px; }
+    .chip {
+      width: 24px; height: 24px; border-radius: 50%; font-size: .72rem; font-weight: bold;
+      display: grid; place-items: center; animation: ballIn .3s both;
+    }
+    .chip.s { background: rgba(46,204,113,.2); color: #2ecc71; border: 1px solid #2ecc71; }
+    .chip.x { background: rgba(241,196,15,.15); color: #f1c40f; border: 1px solid #f1c40f; }
+    .chip.y { background: rgba(231,76,60,.15); color: #e74c3c; border: 1px solid #e74c3c; }
+
+    /* ===== 聖杯神諭 全螢幕 ===== */
+    .divine {
+      position: fixed; inset: 0; z-index: 10;
+      display: flex; padding: 24px 16px; overflow-y: auto;
+      background: radial-gradient(circle at 50% 35%, rgba(130,65,0,.94), rgba(12,4,0,.98) 70%);
+      opacity: 0; pointer-events: none; transition: opacity .6s ease;
+    }
+    .divine.show { opacity: 1; pointer-events: auto; }
+    .divine .rays {
+      position: fixed; left: 50%; top: 35%;
+      width: 200vmax; height: 200vmax; margin: -100vmax 0 0 -100vmax;
+      background: repeating-conic-gradient(rgba(255,215,0,.13) 0deg 7deg, transparent 7deg 20deg);
+      -webkit-mask: radial-gradient(circle, #000 5%, transparent 55%);
+              mask: radial-gradient(circle, #000 5%, transparent 55%);
+      animation: spin 30s linear infinite; pointer-events: none;
+    }
+    .divine-inner { position: relative; width: 100%; max-width: 560px; margin: auto; text-align: center; }
+    .divine-title {
+      font-size: clamp(2.2rem, 10vw, 3.6rem); font-weight: 900; letter-spacing: .3em; padding-left: .3em;
+      background: linear-gradient(180deg, #fff, #ffe082 40%, #f39c12 70%, #b9770e);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+      filter: drop-shadow(0 0 18px rgba(255,200,0,.8));
+    }
+    .divine.show .divine-title { animation: titleIn 1.2s cubic-bezier(.2,1.3,.4,1) both; }
+    @keyframes titleIn {
+      from { opacity: 0; transform: scale(2.6); letter-spacing: 1em; }
+      to   { opacity: 1; transform: scale(1); letter-spacing: .3em; }
+    }
+    .divine-sub { color: var(--gold-bright); margin: 4px 0 16px; font-size: .95rem; opacity: .9; }
+
+    .draw-stage { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    .big-ball {
+      width: 110px; height: 110px; border-radius: 50%;
+      display: grid; place-items: center;
+      font-size: 2.8rem; font-weight: 900; color: #3b1a00;
+      background: radial-gradient(circle at 35% 30%, #fffbe6, #f7c948 40%, #b9770e 100%);
+      box-shadow: 0 0 30px rgba(255,200,0,.7), 0 10px 25px rgba(0,0,0,.6);
+    }
+    .big-ball.pop { animation: bigPop .3s cubic-bezier(.175,.885,.32,1.275); }
+    @keyframes bigPop { from { transform: scale(.4) rotate(-90deg); } to { transform: scale(1) rotate(0); } }
+    .big-ball.super {
+      color: #fff;
+      background: radial-gradient(circle at 35% 30%, #fff, #ff7675 40%, #8e0000 100%);
+      box-shadow: 0 0 40px #ff4d4d, 0 0 90px #ffd700;
+      animation: superBig .9s cubic-bezier(.175,.885,.32,1.275);
+    }
+    @keyframes superBig { 0% { transform: scale(.2) rotate(-360deg); } 70% { transform: scale(1.3); } 100% { transform: scale(1); } }
+    .draw-label { font-size: .9rem; color: var(--gold-bright); min-height: 1.3em; }
+
+    .board { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; margin: 16px 0 8px; }
+    .cell {
+      aspect-ratio: 1; display: grid; place-items: center;
+      font-size: clamp(.68rem, 2.6vw, .9rem); border-radius: 6px;
+      background: rgba(255,255,255,.04); border: 1px solid rgba(243,156,18,.25);
+      color: rgba(255,234,167,.4); transition: all .3s ease;
+    }
+    .cell.hit {
+      background: radial-gradient(circle, #ffe082, #f39c12); color: #3b1a00; font-weight: 800;
+      border-color: #fff3c4; box-shadow: 0 0 12px rgba(255,200,0,.8);
+      animation: cellHit .5s cubic-bezier(.175,.885,.32,1.275);
+    }
+    @keyframes cellHit { from { transform: scale(1.8); } to { transform: scale(1); } }
+    .cell.super {
+      background: radial-gradient(circle, #ff9f9f, #c0392b); color: #fff; border-color: #ffd700;
+      box-shadow: 0 0 18px #ff4d4d, 0 0 30px #ffd700;
+      animation: superPulse .8s ease-in-out infinite alternate;
+    }
+    @keyframes superPulse { from { transform: scale(1); } to { transform: scale(1.18); } }
+
+    .divine-summary { opacity: 0; transition: opacity .6s; }
+    .divine-summary.show { opacity: 1; }
+    .divine-summary .number-grid .ball { width: 40px; height: 40px; font-size: 1rem; }
+    .super-line { margin-top: 10px; color: #ffb3b3; font-weight: bold; }
+    .divine-actions { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+    .thank-btn {
+      background: linear-gradient(135deg, #f7c948, #d35400); color: #3b1a00; font-weight: 900;
+      border: none; border-radius: 24px; padding: 10px 28px; font-size: 1rem; cursor: pointer;
+      box-shadow: 0 0 20px rgba(255,200,0,.6);
+    }
+    .skip-btn { position: absolute; top: 0; right: 0; font-size: .75rem; padding: 4px 10px; margin: 0; }
+
+    .toast {
+      position: fixed; left: 50%; bottom: 30px; z-index: 40;
+      transform: translate(-50%, 20px); opacity: 0;
+      background: rgba(20,10,5,.95); color: var(--gold-bright);
+      border: 1px solid var(--gold); padding: 8px 18px; border-radius: 20px; font-size: .9rem;
+      transition: all .3s ease; pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+    @media (max-width: 420px) {
+      h1 { font-size: 1.5rem; }
+      .bwa-stage { gap: 24px; }
+      .content { padding: 0 16px 18px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="fx"></canvas>
+<div id="flash"></div>
+
+<div class="temple-card" id="card">
+  <button class="sound-btn" id="soundBtn" title="音效開關" aria-label="音效開關">🔊</button>
+
+  <div class="god-wrap">
+    <div id="godImage" class="god-image"></div>
+    <div id="halo" class="halo"></div>
+  </div>
+
+  <div class="content">
+    <h1>關聖帝君 聖籤指引</h1>
+    <p class="subtitle">默念姓名與所求之事，點擊筊杯或按鈕擲筊求指示</p>
+
+    <div class="streak" aria-label="連續聖筊">
+      <span>連續聖筊</span>
+      <span class="lamp" id="lamp0"></span>
+      <span class="lamp" id="lamp1"></span>
+      <span class="lamp" id="lamp2"></span>
+      <span>三連開啟聖杯神諭</span>
+    </div>
+
+    <div class="bwa-stage" id="stage" title="點擊擲筊">
+      <div class="bwa-slot"><div id="bwa1" class="bwa convex"></div><div class="shadow"></div></div>
+      <div class="bwa-slot"><div id="bwa2" class="bwa flat"></div><div class="shadow"></div></div>
+    </div>
+
+    <div class="controls">
+      <button id="tossBtn" class="toss-btn">誠心擲筊</button>
+      <label class="stars-select">幸運星數
+        <select id="stars"></select>
+      </label>
+    </div>
+    <div class="key-hint">電腦可按「空白鍵」擲筊</div>
+
+    <div id="resultStatus" class="result-status"></div>
+    <div id="streakHint" class="streak-hint"></div>
+    <div id="modeTag" class="mode-tag" style="display:none;"></div>
+    <div id="responseBox" class="response-box" style="display:none;"></div>
+
+    <div id="numbersWrap" style="display:none;">
+      <div class="numbers-title" id="numbersTitle">帝君賜您開運號碼（1–80）</div>
+      <div id="numberGrid" class="number-grid"></div>
+      <button class="copy-btn" id="copyBtn">複製號碼</button>
+    </div>
+
+    <div class="history">
+      <div class="history-stats" id="historyStats">尚未擲筊</div>
+      <div class="chips" id="chips"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 聖杯神諭 全螢幕 -->
+<div class="divine" id="divine" aria-hidden="true">
+  <div class="rays"></div>
+  <div class="divine-inner">
+    <button class="ghost-btn skip-btn" id="skipBtn">略過動畫 ⏩</button>
+    <div class="divine-title">聖杯降臨</div>
+    <div class="divine-sub">三連聖筊・帝君親賜 BINGO 神號 20 顆</div>
+
+    <div class="draw-stage">
+      <div class="big-ball" id="bigBall">？</div>
+      <div class="draw-label" id="drawLabel">神號開出中…</div>
+    </div>
+
+    <div class="board" id="board"></div>
+
+    <div class="divine-summary" id="divineSummary">
+      <div class="numbers-title">本期神號（由小到大）</div>
+      <div class="number-grid" id="divineNumbers"></div>
+      <div class="super-line" id="superLine"></div>
+      <div class="divine-actions">
+        <button class="copy-btn" id="divineCopy" style="margin:0">複製號碼</button>
+        <button class="thank-btn" id="thankBtn">叩謝帝君 🙏</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // 🔴【替換圖片】：關聖帝君圖片 URL（載入失敗會自動改用金色「關」字背景）
+  const GOD_IMAGE_URL = "https://media.nownews.com/nn_media/thumbnail/2024/07/1721226742311-28e1b0cdae734538ad6abd7301949007-800x465.webp?unShow=false";
+
+  const $ = id => document.getElementById(id);
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const pad = n => String(n).padStart(2, '0');
+  const vibrate = p => { try { navigator.vibrate && navigator.vibrate(p); } catch (e) {} };
+
+  // ---------- 圖片預載 ----------
+  (() => {
+    const el = $('godImage');
+    const img = new Image();
+    img.onload = () => { el.style.backgroundImage = `url('${GOD_IMAGE_URL}')`; };
+    img.onerror = () => el.classList.add('fallback');
+    img.src = GOD_IMAGE_URL;
+  })();
+
+  // 星數選單 1–10
+  (() => {
+    const sel = $('stars');
+    for (let i = 1; i <= 10; i++) {
+      const o = document.createElement('option');
+      o.value = i; o.textContent = `${i} 星`;
+      if (i === 8) o.selected = true;
+      sel.appendChild(o);
+    }
+  })();
+
+  // ---------- 音效（Web Audio，免外部檔案） ----------
+  let actx = null, soundOn = true;
+  function ac() {
+    if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+    if (actx.state === 'suspended') actx.resume();
+    return actx;
+  }
+  function tone(freq, dur, type = 'sine', vol = .2, delay = 0) {
+    if (!soundOn) return;
+    const c = ac(), o = c.createOscillator(), g = c.createGain(), t = c.currentTime + delay;
+    o.type = type; o.frequency.value = freq;
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(vol, t + .01);
+    g.gain.exponentialRampToValueAtTime(.001, t + dur);
+    o.connect(g).connect(c.destination);
+    o.start(t); o.stop(t + dur + .05);
+  }
+  function noise(dur, vol, freq = 900, delay = 0) {
+    if (!soundOn) return;
+    const c = ac(), len = Math.floor(c.sampleRate * dur);
+    const buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    const s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
+    f.type = 'bandpass'; f.frequency.value = freq; g.gain.value = vol;
+    s.buffer = buf; s.connect(f).connect(g).connect(c.destination);
+    s.start(c.currentTime + delay);
+  }
+  const SFX = {
+    toss()  { noise(.45, .35, 700); },
+    clack() { tone(340, .07, 'square', .08); tone(170, .14, 'triangle', .18, .015); noise(.06, .3, 2500); },
+    bell()  { [880, 1320, 1760, 2640].forEach((f, i) => tone(f, 1.6, 'sine', .12 / (i + 1))); },
+    laugh() { [523, 659, 784].forEach((f, i) => tone(f, .15, 'triangle', .08, i * .09)); },
+    fail()  { tone(196, .45, 'sawtooth', .05); tone(147, .6, 'sawtooth', .05, .12); },
+    tick()  { tone(1400, .05, 'square', .04); },
+    gong()  {
+      tone(98, 3.5, 'sine', .4); tone(196, 3, 'sine', .18); tone(294, 2.4, 'sine', .1);
+      noise(.8, .25, 300);
+      [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, 1.4, 'sine', .07, .35 + i * .12));
+    },
+    superHit() {
+      tone(130, 2, 'sine', .3);
+      [784, 988, 1175, 1568, 1976].forEach((f, i) => tone(f, 1.2, 'triangle', .08, i * .07));
+    }
+  };
+  $('soundBtn').onclick = () => {
+    soundOn = !soundOn;
+    $('soundBtn').textContent = soundOn ? '🔊' : '🔇';
+    if (soundOn) SFX.tick();
+  };
+
+  // ---------- 粒子系統 ----------
+  const fx = $('fx'), g = fx.getContext('2d');
+  let P = [], W = 0, H = 0;
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = innerWidth; H = innerHeight;
+    fx.width = W * dpr; fx.height = H * dpr;
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  addEventListener('resize', resize); resize();
+
+  function add(p) {
+    P.push(Object.assign({ life: 1, decay: .01, size: 2, vx: 0, vy: 0, grav: 0, drag: 1, rot: 0, vr: 0, shape: 'dot', color: '255,200,80' }, p));
+  }
+  function burst(x, y, n = 40, speed = 6, colors = ['255,215,0', '255,170,40', '255,240,200']) {
+    if (reduced) n = Math.min(n, 10);
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * Math.PI * 2, s = Math.random() * speed + 1;
+      add({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, grav: .08, drag: .97,
+            size: Math.random() * 2.5 + 1, decay: .012 + Math.random() * .015,
+            color: colors[i % colors.length] });
+    }
+  }
+  function confetti(n = 160) {
+    if (reduced) n = 30;
+    const colors = ['255,215,0', '243,156,18', '231,76,60', '255,240,200', '192,57,43'];
+    for (let i = 0; i < n; i++) {
+      add({ x: Math.random() * W, y: -20 - Math.random() * H * .5,
+            vx: (Math.random() - .5) * 2, vy: Math.random() * 2 + 2, grav: .03, drag: .995,
+            size: Math.random() * 8 + 6, rot: Math.random() * 6, vr: (Math.random() - .5) * .3,
+            decay: .004, shape: 'rect', color: colors[i % colors.length] });
+    }
+  }
+  function centerOf(el) { const r = el.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; }
+
+  (function frame() {
+    g.clearRect(0, 0, W, H);
+    // 香火餘燼緩緩上升
+    if (!reduced && Math.random() < .2 && P.length < 400) {
+      add({ x: Math.random() * W, y: H + 5, vx: (Math.random() - .5) * .3, vy: -(.4 + Math.random() * .8),
+            size: Math.random() * 1.8 + .6, decay: .003 + Math.random() * .003,
+            color: `255,${140 + (Math.random() * 80 | 0)},60` });
+    }
+    for (let i = P.length - 1; i >= 0; i--) {
+      const p = P[i];
+      p.vx *= p.drag; p.vy = p.vy * p.drag + p.grav;
+      p.x += p.vx; p.y += p.vy; p.rot += p.vr; p.life -= p.decay;
+      if (p.life <= 0 || p.y > H + 40) { P.splice(i, 1); continue; }
+      g.globalAlpha = Math.max(0, Math.min(1, p.life));
+      if (p.shape === 'rect') {
+        g.save(); g.translate(p.x, p.y); g.rotate(p.rot);
+        g.fillStyle = `rgb(${p.color})`;
+        g.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2 * Math.abs(Math.cos(p.rot * 2)) + 1);
+        g.restore();
+      } else {
+        g.globalCompositeOperation = 'lighter';
+        g.fillStyle = `rgba(${p.color},.25)`;
+        g.beginPath(); g.arc(p.x, p.y, p.size * 3, 0, 6.283); g.fill();
+        g.fillStyle = `rgb(${p.color})`;
+        g.beginPath(); g.arc(p.x, p.y, p.size, 0, 6.283); g.fill();
+        g.globalCompositeOperation = 'source-over';
+      }
+    }
+    g.globalAlpha = 1;
+    requestAnimationFrame(frame);
+  })();
+
+  // ---------- 回應模式資料庫（權重） ----------
+  const MODES = [
+    { type: "籤詩運勢", weight: 30, getContent: () => pick([
+        { type: "【大吉】", text: "枯木逢春再發芽，順風行船萬事達。求財得財，求名得名。" },
+        { type: "【大吉】", text: "雲開月出照乾坤，貴人相助事成真。前途光明，百事亨通。" },
+        { type: "【大吉】", text: "積善之家有餘慶，吉星高照展宏圖。心想事成，大吉大利。" },
+        { type: "【大凶】", text: "風浪滾滾暗藏險，急行易跌宜退守。莫貪眼前，謹言慎行。" },
+        { type: "【大凶】", text: "烏雲蔽日未見光，小人作祟宜提防。切忌衝動，守舊為宜。" },
+        { type: "【大凶】", text: "前方歧路多荊棘，強求無益反招損。沉澱心性，靜待時機。" }
+      ]) },
+    { type: "誠心考驗", weight: 30, getContent: () => ({ type: "🙏 誠心考驗", text: "心念微有雜想，請重新理清思緒，深呼吸後再試一次。" }) },
+    { type: "賓果連線", weight: 20, getContent: () => ({ type: "🎯 賓果彩蛋", text: "祝您幸運連線，大吉大利！帝君賜您開運幸運號碼。" }) },
+    { type: "神明解惑", weight: 10, getContent: () => ({ type: "💡 聖意解惑", text: pick([
+        "心若坦蕩，事無不順。順其自然，答案自現。",
+        "欲速則不達，當下只需一步一腳印，隨遇而安。",
+        "執著於過去無益，放下包袱，方能擁抱新生。"
+      ]) }) },
+    { type: "關公語錄與典故", weight: 10, getContent: () => pick([
+        { type: "📜 關公語錄", text: "玉可碎而不可改其白，竹可焚而不可毀其節。" },
+        { type: "📜 關公語錄", text: "傲不可長，欲不可縱，志不可滿，樂不可極。" },
+        { type: "📖 三國典故", text: "【溫酒斬華雄】關羽主動請纓，酒未冷即斬敵將，展現非凡膽識。" },
+        { type: "📖 三國典故", text: "【過五關斬六將】關羽千里尋兄，歷經重重關卡無所畏懼，彰顯至忠。" }
+      ]) }
+  ];
+  function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+  function getRandomModeByWeight() {
+    const total = MODES.reduce((s, m) => s + m.weight, 0);
+    let r = Math.random() * total;
+    for (const m of MODES) { if (r < m.weight) return m; r -= m.weight; }
+    return MODES[0];
+  }
+  function drawUnique(count, max = 80) {
+    const pool = Array.from({ length: max }, (_, i) => i + 1);
+    for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+    return pool.slice(0, count); // 保留開出順序
+  }
+
+  // ---------- 狀態 ----------
+  let isTossing = false, divineOpen = false, streak = 0;
+  let history = [], total = 0, holyCount = 0, divineCount = 0;
+  let currentNumbers = [], currentSuper = null;
+  const DUR = reduced ? 300 : 1150;
+  const bwaPos = { bwa1: { x: 0, r: 0 }, bwa2: { x: 0, r: 0 } };
+
+  function flyBwa(el, dir) {
+    el.getAnimations().forEach(a => a.cancel());
+    const from = bwaPos[el.id];
+    const toX = Math.round((Math.random() * 30 - 15) + dir * 6);
+    const tilt = Math.round(Math.random() * 16 - 8);
+    const h = 95 + Math.random() * 55;
+    const spins = (2 + Math.floor(Math.random() * 2)) * 360 * dir;
+    bwaPos[el.id] = { x: toX, r: tilt };
+    const midX = (from.x + toX) / 2 + dir * 18;
+    return el.animate([
+      { transform: `translate(${from.x}px,0) rotate(${from.r}deg)`, easing: 'cubic-bezier(.2,.7,.4,1)' },
+      { transform: `translate(${midX}px,${-h}px) rotate(${spins * .5}deg) scale(1.1)`, offset: .42, easing: 'cubic-bezier(.6,0,.9,.5)' },
+      { transform: `translate(${toX}px,0) rotate(${spins + tilt}deg)`, offset: .8, easing: 'ease-out' },
+      { transform: `translate(${toX}px,-14px) rotate(${spins + tilt - dir * 10}deg)`, offset: .9, easing: 'ease-in' },
+      { transform: `translate(${toX}px,0) rotate(${spins + tilt}deg)` }
+    ], { duration: DUR, fill: 'forwards' }).finished;
+  }
+
+  function updateLamps() {
+    for (let i = 0; i < 3; i++) $('lamp' + i).classList.toggle('lit', i < streak);
+  }
+
+  function setStatus(text, color) {
+    const el = $('resultStatus');
+    el.textContent = text; el.style.color = color;
+    el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
+  }
+
+  let typeTimer = null;
+  function typeText(title, text) {
+    const box = $('responseBox');
+    clearInterval(typeTimer);
+    box.innerHTML = `<strong></strong><br><span></span>`;
+    box.querySelector('strong').textContent = title;
+    const span = box.querySelector('span');
+    box.style.display = 'block';
+    if (reduced) { span.textContent = text; return; }
+    let i = 0;
+    typeTimer = setInterval(() => { span.textContent = text.slice(0, ++i); if (i >= text.length) clearInterval(typeTimer); }, 40);
+  }
+
+  function addHistory(kind) {
+    total++; if (kind === 's') holyCount++;
+    history.push(kind); if (history.length > 15) history.shift();
+    const label = { s: '聖', x: '笑', y: '陰' };
+    $('chips').innerHTML = history.map(k => `<span class="chip ${k}">${label[k]}</span>`).join('');
+    $('historyStats').textContent = `共擲 ${total} 次・聖筊 ${holyCount} 次・聖杯神諭 ${divineCount} 次`;
+  }
+
+  function showNumbers(nums, superNum, title) {
+    currentNumbers = nums.slice().sort((a, b) => a - b);
+    currentSuper = superNum;
+    $('numbersTitle').textContent = title;
+    $('numbersWrap').style.display = 'block';
+    renderBalls($('numberGrid'), currentNumbers, superNum, true);
+  }
+  function renderBalls(grid, nums, superNum, withSound) {
+    grid.innerHTML = '';
+    nums.forEach((n, i) => {
+      const b = document.createElement('div');
+      b.className = 'ball' + (n === superNum ? ' super' : '');
+      b.style.animationDelay = `${i * .09}s`;
+      b.textContent = pad(n);
+      grid.appendChild(b);
+      if (withSound) setTimeout(SFX.tick, i * 90);
+    });
+  }
+
+  // ---------- 擲筊 ----------
+  async function tossBwa() {
+    if (isTossing || divineOpen) return;
+    isTossing = true;
+    try { ac(); } catch (e) {}
+
+    const btn = $('tossBtn'), stage = $('stage'), b1 = $('bwa1'), b2 = $('bwa2');
+    btn.disabled = true;
+    setStatus('擲筊中，請虔心等待…', '#f39c12');
+    $('streakHint').textContent = '';
+    $('modeTag').style.display = 'none';
+    $('responseBox').style.display = 'none';
+    $('numbersWrap').style.display = 'none';
+    $('godImage').classList.remove('glow');
+    $('halo').classList.remove('on');
+    $('card').classList.remove('blessed', 'shake');
+
+    stage.classList.add('flying');
+    SFX.toss(); vibrate(20);
+
+    // 空中翻面
+    const flip = setInterval(() => {
+      [b1, b2].forEach(b => { b.classList.toggle('flat'); b.classList.toggle('convex'); });
+    }, 95);
+
+    const s1 = Math.floor(Math.random() * 2);
+    const s2 = Math.floor(Math.random() * 2);
+
+    setTimeout(() => {
+      clearInterval(flip);
+      b1.className = `bwa ${s1 === 0 ? 'flat' : 'convex'}`;
+      b2.className = `bwa ${s2 === 0 ? 'flat' : 'convex'}`;
+      SFX.clack(); vibrate(35);
+    }, DUR * .8);
+    setTimeout(() => SFX.clack(), DUR * .97);
+
+    await Promise.all([flyBwa(b1, -1), flyBwa(b2, 1)]);
+    stage.classList.remove('flying');
+
+    resolveToss(s1, s2);
+    btn.disabled = divineOpen;
+    isTossing = false;
+  }
+
+  function resolveToss(s1, s2) {
+    const [sx, sy] = centerOf($('stage'));
+
+    if (s1 !== s2) {
+      // 聖筊
+      streak++;
+      addHistory('s');
+      updateLamps();
+      SFX.bell(); vibrate([30, 40, 30]);
+      burst(sx, sy, 60, 7);
+      $('godImage').classList.add('glow');
+      $('halo').classList.add('on');
+      $('card').classList.add('blessed');
+
+      if (streak >= 3) {
+        setStatus('【三連聖筊】聖杯降臨！', '#ffd700');
+        $('streakHint').textContent = '帝君顯靈，神號即將開出…';
+        streak = 0;
+        setTimeout(startDivine, reduced ? 200 : 900);
+        return;
+      }
+
+      setStatus(`【聖筊】帝君賜籤！`, '#2ecc71');
+      $('streakHint').textContent = `再 ${3 - streak} 次聖筊，即開啟「聖杯神諭」超神聖賓果`;
+
+      const mode = getRandomModeByWeight();
+      const content = mode.getContent();
+      $('modeTag').textContent = `觸發：${mode.type}（${mode.weight}%）`;
+      $('modeTag').style.display = 'inline-block';
+      typeText(content.type, content.text);
+
+      const stars = +$('stars').value;
+      showNumbers(drawUnique(stars), null, `帝君賜您 ${stars} 星開運號碼（1–80）`);
+    } else {
+      const broke = streak > 0;
+      streak = 0;
+      updateLamps();
+      if (s1 === 0) {
+        addHistory('x');
+        SFX.laugh();
+        setStatus('【笑筊】心意未明，請重新整理思緒再求。', '#f1c40f');
+      } else {
+        addHistory('y');
+        SFX.fail(); vibrate(120);
+        $('card').classList.add('shake');
+        setStatus('【陰筊】帝君不允，宜退一步審慎再思。', '#e74c3c');
+      }
+      $('streakHint').textContent = broke ? '連續聖筊中斷，靜心後重新開始' : '';
+    }
+  }
+
+  // ---------- 聖杯神諭：超神聖 BINGO ----------
+  let skipDraw = false;
+  async function startDivine() {
+    divineOpen = true; skipDraw = false; divineCount++;
+    $('tossBtn').disabled = true;
+    $('historyStats').textContent = `共擲 ${total} 次・聖筊 ${holyCount} 次・聖杯神諭 ${divineCount} 次`;
+
+    const fl = $('flash'); fl.classList.remove('go'); void fl.offsetWidth; fl.classList.add('go');
+    SFX.gong(); vibrate([80, 40, 80, 40, 250]);
+    $('card').classList.remove('shake'); void $('card').offsetWidth; $('card').classList.add('shake');
+    burst(W / 2, H * .4, 150, 12);
+    confetti();
+
+    // 建立 1–80 號碼盤
+    const board = $('board');
+    board.innerHTML = '';
+    for (let i = 1; i <= 80; i++) {
+      const c = document.createElement('div');
+      c.className = 'cell'; c.id = 'cell' + i; c.textContent = pad(i);
+      board.appendChild(c);
+    }
+    $('bigBall').className = 'big-ball'; $('bigBall').textContent = '？';
+    $('drawLabel').textContent = '神號開出中…';
+    $('divineSummary').classList.remove('show');
+    $('skipBtn').style.display = '';
+    const ov = $('divine');
+    ov.scrollTop = 0;
+    ov.classList.add('show'); ov.setAttribute('aria-hidden', 'false');
+
+    const nums = drawUnique(20);
+    const superNum = nums[19]; // 第 20 顆為超級獎號
+    await sleep(reduced ? 100 : 1500);
+
+    for (let i = 0; i < nums.length; i++) {
+      const n = nums[i], isSuper = i === 19;
+      if (isSuper && !skipDraw) {
+        $('drawLabel').textContent = '⚡ 超級獎號 降臨 ⚡';
+        await sleep(900);
+      }
+      const ball = $('bigBall');
+      ball.textContent = pad(n);
+      ball.className = 'big-ball';
+      void ball.offsetWidth;
+      ball.classList.add(isSuper ? 'super' : 'pop');
+      const cell = $('cell' + n);
+      cell.classList.add(isSuper ? 'super' : 'hit');
+      if (!isSuper) {
+        $('drawLabel').textContent = `第 ${i + 1} / 20 顆`;
+        if (!skipDraw) { SFX.tick(); const [cx, cy] = centerOf(cell); burst(cx, cy, 12, 3); }
+      } else {
+        $('drawLabel').textContent = `超級獎號：${pad(n)}`;
+        SFX.superHit(); vibrate([100, 50, 200]);
+        const [bx, by] = centerOf(ball);
+        burst(bx, by, 120, 10, ['255,80,80', '255,215,0', '255,255,255']);
+        confetti(80);
+      }
+      if (!skipDraw) await sleep(isSuper ? 600 : 260);
+    }
+
+    $('skipBtn').style.display = 'none';
+    renderBalls($('divineNumbers'), nums.slice().sort((a, b) => a - b), superNum, false);
+    $('superLine').textContent = `🔥 超級獎號：${pad(superNum)}`;
+    $('divineSummary').classList.add('show');
+
+    // 同步到主卡片
+    showNumbers(nums, superNum, '聖杯神諭・BINGO 神號 20 顆（紅球為超級獎號）');
+    $('modeTag').textContent = '觸發：聖杯神諭（三連聖筊）';
+    $('modeTag').style.display = 'inline-block';
+    typeText('✨ 聖杯神諭', '三筊連聖，帝君親臨！此乃天賜神號，誠心敬領，切記量力而為、隨緣歡喜。');
+  }
+
+  function closeDivine() {
+    const ov = $('divine');
+    ov.classList.remove('show'); ov.setAttribute('aria-hidden', 'true');
+    divineOpen = false;
+    $('tossBtn').disabled = false;
+    updateLamps();
+    setStatus('叩謝帝君，願您好運連連！', '#ffd700');
+    $('streakHint').textContent = '可再次誠心擲筊，累積下一輪聖杯';
+  }
+
+  // ---------- 複製 ----------
+  function toast(msg) {
+    const t = $('toast'); t.textContent = msg; t.classList.add('show');
+    clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 1800);
+  }
+  async function copyNumbers() {
+    if (!currentNumbers.length) return;
+    let text = '關聖帝君開運號碼：' + currentNumbers.map(pad).join(' ');
+    if (currentSuper) text += `（超級獎號 ${pad(currentSuper)}）`;
+    try { await navigator.clipboard.writeText(text); toast('已複製號碼 🙏'); }
+    catch (e) {
+      const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta);
+      ta.select(); try { document.execCommand('copy'); toast('已複製號碼 🙏'); } catch (_) { toast('複製失敗，請手動抄寫'); }
+      ta.remove();
+    }
+  }
+
+  // ---------- 事件 ----------
+  $('stage').addEventListener('click', tossBwa);
+  $('tossBtn').addEventListener('click', tossBwa);
+  $('copyBtn').addEventListener('click', copyNumbers);
+  $('divineCopy').addEventListener('click', copyNumbers);
+  $('thankBtn').addEventListener('click', closeDivine);
+  $('skipBtn').addEventListener('click', () => { skipDraw = true; });
+
+  document.addEventListener('keydown', e => {
+    if (e.target.tagName === 'SELECT') return;
+    if (divineOpen) {
+      if (e.key === 'Escape' && $('divineSummary').classList.contains('show')) closeDivine();
+      return;
+    }
+    if (e.code === 'Space' || e.key === 'Enter') { e.preventDefault(); tossBwa(); }
+    // 測試用：Shift + D 直接觸發聖杯神諭
+    if (e.shiftKey && e.key.toLowerCase() === 'd' && !isTossing) startDivine();
+  });
+</script>
+
+</body>
+</html>
